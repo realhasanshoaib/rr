@@ -3,21 +3,54 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>rr — a build system for composable HTML documents</title>
-<meta name="description" content="Compose <rr-*> components into one self-contained, themed HTML file. Zero-dependency Node CLI.">
+<title>rr — compose HTML documents from components</title>
+<meta name="description" content="Compose <rr-*> components into one self-contained, themed HTML file. Zero-dependency Node CLI. Annotate code, quiz readers, ship one file.">
 <link rel="canonical" href="https://rr.hasanshoaib.com/">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon.png" sizes="512x512" type="image/png">
 <meta property="og:type" content="website">
-<meta property="og:title" content="rr — a build system for composable HTML documents">
-<meta property="og:description" content="Compose <rr-*> components into one self-contained, themed HTML file. Zero-dependency Node CLI.">
+<meta property="og:title" content="rr — compose HTML documents from components">
+<meta property="og:description" content="Compose <rr-*> components into one self-contained, themed HTML file. Zero-dependency Node CLI. Annotate code, quiz readers, ship one file.">
 <meta property="og:url" content="https://rr.hasanshoaib.com/">
 <meta property="og:image" content="https://rr.hasanshoaib.com/og.png">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="rr — a build system for composable HTML documents">
-<meta name="twitter:description" content="Compose <rr-*> components into one self-contained, themed HTML file. Zero-dependency Node CLI.">
+<meta name="twitter:title" content="rr — compose HTML documents from components">
+<meta name="twitter:description" content="Compose <rr-*> components into one self-contained, themed HTML file. Zero-dependency Node CLI. Annotate code, quiz readers, ship one file.">
 <meta name="twitter:image" content="https://rr.hasanshoaib.com/og.png">
 <style>
+.rr-code { margin: 1rem 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.rr-code figcaption { display: flex; align-items: center; gap: .5rem; padding: .4rem .75rem; background: var(--card); border-bottom: 1px solid var(--line); font-size: .8rem; color: var(--muted); }
+.rr-code figcaption code { background: none; padding: 0; }
+.rr-code figcaption .grow { flex: 1; }
+.rr-code figcaption .hint { font-size: .72rem; opacity: .8; }
+.rr-code pre.shiki { margin: 0; border: 0; border-radius: 0; padding: .6rem 0; background: var(--card) !important; overflow-x: auto; }
+@media (prefers-color-scheme: dark) {
+  .rr-code pre.shiki, .rr-code pre.shiki span { color: var(--shiki-dark, inherit) !important; }
+}
+.rr-code .line { display: inline-block; width: 100%; padding-right: .75rem; cursor: pointer; }
+.rr-code code { counter-reset: line var(--ln-start, 0); }
+.rr-code .line::before { counter-increment: line; content: counter(line); display: inline-block; width: 2.6em; padding-right: .9em; text-align: right; color: var(--muted); opacity: .55; user-select: none; }
+.rr-code .line:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.rr-code .line.sel { background: color-mix(in srgb, var(--accent) 14%, transparent); }
+.rr-code .line.annotated { box-shadow: inset 3px 0 0 var(--amber); }
+.rr-code .ann-note, .rr-code .ann-editor {
+  display: block; white-space: normal; margin: .25rem .75rem .5rem 3.5em; padding: .5rem .75rem;
+  background: var(--bg); border: 1px solid var(--line); border-left: 3px solid var(--amber); border-radius: 8px;
+  font: .85rem/1.5 ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+}
+.rr-code .ann-note { cursor: pointer; }
+.rr-code .ann-note .meta { color: var(--muted); font-size: .72rem; display: block; margin-bottom: .15rem; }
+.rr-code .ann-editor textarea { width: 100%; min-height: 3.2em; resize: vertical; font: inherit; color: var(--fg); background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: .4rem .6rem; }
+.rr-code .ann-editor .row { display: flex; gap: .5rem; margin-top: .4rem; align-items: center; }
+.rr-code .ann-editor .row .grow { flex: 1; }
+.ann-bar {
+  position: fixed; right: 1rem; bottom: 1rem; z-index: 30;
+  background: var(--card); border: 1px solid var(--line); border-radius: 999px;
+  padding: .35rem .5rem; display: flex; gap: .5rem; align-items: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,.15);
+}
+.ann-bar[hidden] { display: none; }
+
 :root {
   --bg: #faf9f7; --fg: #37352f; --muted: #9b9a97; --line: #e8e6e1;
   --card: #f3f1ec; --accent: #2383e2; --amber: #d9730d; --green: #448361; --red: #d44c47;
@@ -124,6 +157,25 @@ dl.glossary dt { font-weight: 600; font-size: .95rem; }
 dl.glossary dd { margin: 0; font-size: .95rem; }
 @media (max-width: 520px) { dl.glossary { grid-template-columns: 1fr; } dl.glossary dd { margin-bottom: .5rem; } }
 
+.quiz { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 1rem 1.25rem; margin: 1.5rem 0; }
+.quiz .q { padding: .6rem 0; }
+.quiz .q + .q { border-top: 1px solid var(--line); }
+.quiz .qt { font-weight: 600; margin: .25rem 0 .6rem; }
+.quiz .choice {
+  display: block; width: 100%; text-align: left; margin: .35rem 0;
+  background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: .5rem .75rem;
+}
+.quiz .q.answered .choice { cursor: default; }
+.quiz .q.answered .choice:hover { border-color: var(--line); }
+.quiz .choice.picked-right { border-color: var(--green); color: var(--green); }
+.quiz .choice.picked-wrong { border-color: var(--red); color: var(--red); }
+.quiz .q.answered .choice.is-correct { border-color: var(--green); }
+.quiz .q.answered .choice:not(.is-correct):not(.picked-wrong) { opacity: .55; }
+.quiz .why { border: 1px solid var(--line); border-left: 3px solid var(--accent); background: var(--bg); border-radius: 8px; padding: .6rem .8rem; margin: .5rem 0 .25rem; font-size: .92rem; }
+.quiz-foot { display: flex; gap: .5rem; align-items: center; margin-top: .75rem; }
+.quiz-foot .grow { flex: 1; }
+.quiz-foot .score { font-size: .85rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+
 .scorecard { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; margin: 1rem 0; }
 .scorecard .row { display: grid; grid-template-columns: 1fr 1fr 6.5rem; gap: 1rem; padding: .6rem 1rem; border-bottom: 1px solid var(--line); font-size: .92rem; align-items: start; }
 .scorecard .row:last-child { border-bottom: none; }
@@ -166,139 +218,349 @@ dl.glossary dd { margin: 0; font-size: .95rem; }
 </head>
 <body>
 <svg style="display:none" aria-hidden="true">
+  <symbol id="i-users" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></symbol>
   <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
   <symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
-  <symbol id="i-branch" viewBox="0 0 24 24"><path d="M6 3v12"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></symbol>
   <symbol id="i-puzzle" viewBox="0 0 24 24"><path d="M5 8h3a2 2 0 1 1 4 0h3v3a2 2 0 1 1 0 4v3h-3a2 2 0 1 0-4 0H5z"/></symbol>
   <symbol id="i-doc" viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M9 13h6M9 17h6"/></symbol>
+  <symbol id="i-folder" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></symbol>
   <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2 3 14h7l-1 8 10-12h-7z"/></symbol>
-  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3h.1a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9v.1a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
 </svg>
 <main>
+<style>
+/* site-only chrome, inline so the page stays self-contained */
+.hero { grid-column: 1 / -1; width: min(1080px, calc(100% - 3rem)); justify-self: center; padding: 4rem 0 1rem; }
+.hero h1 { font-size: clamp(4.5rem, 13vw, 8rem); line-height: .95; letter-spacing: -.045em; font-weight: 700; margin: 0 0 1rem; }
+.hero h1 .cursor { display: inline-block; width: .48em; height: .82em; background: var(--accent); margin-left: .06em; animation: rr-blink 1.2s steps(1) infinite; }
+@keyframes rr-blink { 50% { opacity: 0; } }
+.hero .thesis { font-size: 1.15rem; max-width: 46rem; margin: 0 0 1.75rem; }
+.install { display: flex; align-items: center; gap: .9rem; background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: .65rem .6rem .65rem 1rem; width: fit-content; max-width: 100%; font: .95rem/1.5 ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+.install .prompt { color: var(--muted); user-select: none; }
+.install code { background: none; padding: 0; }
+.also { margin-top: .6rem; }
+nav.toc .brand { color: var(--fg); font-weight: 600; margin-right: .5rem; }
+nav.toc .grow { flex: 1; }
+nav.toc button { font-size: .8rem; padding: .15rem .6rem; border-radius: 999px; }
+.seam {
+  position: absolute; top: -.72em; right: .65rem; z-index: 5;
+  font: 11px/1.5 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  color: var(--accent); background: var(--bg); border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line));
+  border-radius: 4px; padding: 0 .35rem; pointer-events: none; white-space: nowrap;
+}
+.specimen { position: relative; }
+body.seams-off .seam { display: none; }
+.foot { color: var(--muted); font-size: .85rem; border-top: 1px solid var(--line); padding-top: 1.25rem; margin-top: 3rem; }
+</style>
+
 <nav class="toc" aria-label="Sections">
-  <a href="#start">Quickstart</a>
-  <a href="#example">Example</a>
-  <a href="#components">Components</a>
-  <a href="#install">Install</a>
+  <a href="#top"></a>
+  <a href="#write">You write</a>
+  <a href="#why">Why</a>
+  <a href="#live">Try it here</a>
+  <a href="#library">Library</a>
+  <a href="/demo">Full demo</a>
   <a href="https://github.com/hhushhas/rr">GitHub ↗</a>
 </nav>
 
-<header>
-  <p class="kicker">Composable HTML · zero dependencies</p>
-  <h1><svg class="icon"><use href="#i-doc"/></svg> rr</h1>
-  <p>A build system for composable HTML documents. Write a small <code>.rr.html</code> of <code>&lt;rr-*&gt;</code> tags; <code>rr build</code> expands them into one polished, self-contained HTML file — canonical CSS, a tree-shaken icon sprite, and both themes — that opens straight from disk with no dependencies and no network.</p>
-  <pre><code>npm install -g rr-cli</code></pre>
-</header>
+<div class="hero" id="top">
+  <p class="kicker">Composable HTML documents · zero dependencies</p>
+  <h1>rr<span class="cursor"></span></h1>
+  <p class="thesis">A build system for documents meant to be <em>read</em> — specs, reports, debriefs. Compose <code>&lt;rr-*&gt;</code> components; get one polished, self-contained HTML file. No server, no framework, nothing to drift.</p>
+  <div class="install"><span class="prompt">$</span><code id="install-cmd">npm install -g rr-cli</code><button type="button" id="copy-install">Copy</button></div>
+  <p class="caption also">also <code>brew install hhushhas/tap/rr</code> · scoop on Windows · <a href="https://github.com/hhushhas/rr#install">all installs</a></p>
+  <p class="caption">Every labeled box below is a live component, rendered by rr from <a href="https://github.com/hhushhas/rr/blob/main/site/index.rr.html">this page's own <code>.rr.html</code> source</a>. The labels are the tags. <b>seams</b> in the nav hides them.</p>
+</div>
 
-<section id="start">
-  <h2><svg class="icon"><use href="#i-bolt"/></svg> Quickstart</h2>
-  <div class="tiles">
-  <div class="card">
-  <p class="kicker"><svg class="icon"><use href="#i-doc"/></svg> Input</p>
-  <b class="">.rr.html</b>
-  <span class="caption">a few component tags</span>
-</div>
-    <div class="card">
-  <p class="kicker"><svg class="icon"><use href="#i-check"/></svg> Output</p>
-  <b class="">one .html</b>
-  <span class="caption">self-contained</span>
-</div>
-    <div class="card">
-  <p class="kicker"><svg class="icon"><use href="#i-puzzle"/></svg> Deps</p>
-  <b class="">0</b>
-  <span class="caption">pure Node</span>
-</div>
-</div>
-  <pre><code>rr init report          # scaffolds report.rr.html
-rr build report.rr.html # emits report.html beside it</code></pre>
-  <div class="callout "><b>This page is the demo.</b> It was authored as a <code>.rr.html</code> file and built with <code>rr</code> itself — the same components documented below.</div>
-</section>
-
-<section id="example">
-  <h2><svg class="icon"><use href="#i-branch"/></svg> What you write vs. what you get</h2>
+<section id="write">
+  <h2><svg class="icon"><use href="#i-doc"/></svg> You write eleven lines</h2>
   <div class="panes">
   <div class="pane before">
-  <p class="kicker">report.rr.html</p>
-  <pre style="margin:0"><code>&lt;rr-section title="TL;DR"&gt;
+  <p class="kicker">report.rr.html — the whole source</p>
+  <pre style="margin:0"><code>&lt;rr-section title="TL;DR" icon="bolt"&gt;
   &lt;rr-tiles&gt;
-    &lt;rr-tile label="Shipped"
-      value="3" icon="check"/&gt;
+    &lt;rr-tile label="Shipped" value="3"
+             icon="check" caption="this week"/&gt;
   &lt;/rr-tiles&gt;
   &lt;rr-callout tone="amber"&gt;
-    Open decision.
+    &lt;b&gt;Open decision.&lt;/b&gt; TTL: 5 or 15 min.
   &lt;/rr-callout&gt;
+  &lt;rr-progress label="Rollout" pct="80"
+               n="8/10 regions"/&gt;
 &lt;/rr-section&gt;</code></pre>
 </div>
     <div class="pane after">
-  <p class="kicker">report.html</p>
-  <p style="margin:0 0 .6rem">A styled section with a stat tile and an amber callout — CSS and icons inlined, nothing external.</p>
-      <div class="tiles">
+  <p class="kicker">report.html — what ships</p>
+  <div class="tiles">
   <div class="card">
   <p class="kicker"><svg class="icon"><use href="#i-check"/></svg> Shipped</p>
   <b class="">3</b>
   <span class="caption">this week</span>
 </div>
 </div>
-      <div class="callout amber">Open decision.</div>
-</div>
-</div>
-  <p>The build fails loudly on unknown components, missing props, and unknown icons — a composed document is correct by construction.</p>
-</section>
-
-<section id="components">
-  <h2><svg class="icon"><use href="#i-puzzle"/></svg> The component library</h2>
-  <p>Surfaces, status, flows, checklists, scorecards, and interactive mini-worlds — composed, not hand-written. A sampler:</p>
-  <div class="progress-row">
+      <div class="callout amber"><b>Open decision.</b> TTL: 5 or 15 min.</div>
+      <div class="progress-row">
   <span class="n label">Rollout</span>
   <div class="progress"><i class="" style="width:80%"></i></div>
   <span class="n">8/10 regions</span>
 </div>
-  <div class="progress-row">
-  <span class="n label">Coverage</span>
-  <div class="progress"><i class="amber" style="width:45%"></i></div>
-  <span class="n">45/100 paths</span>
 </div>
-  <div class="journey">
-  <span class="stop ">Write .rr.html</span><span class="sep"><svg class="icon"><use href="#i-arrow-right"/></svg></span><span class="stop new">rr build</span><span class="sep"><svg class="icon"><use href="#i-arrow-right"/></svg></span><span class="stop ">Ship one file</span>
 </div>
-  <div class="scorecard">
-  <div class="row head"><span>Promised (spec)</span><span>Delivered (debrief)</span><span>Verdict</span></div>
-  <div class="row"><span>Zero runtime dependencies</span><span>Pure Node, no bundler</span><span class="badge green">kept</span></div>
-    <div class="row"><span>One self-contained file</span><span>CSS, JS, icons all inlined</span><span class="badge green">kept</span></div>
-</div>
-  <div class="card">
-  <p class="kicker">Every output ships</p>
-  <ul class="checklist">
-    <li class="done"><svg class="icon"><use href="#i-check"/></svg> Light and dark themes</li>
-    <li class="done"><svg class="icon"><use href="#i-check"/></svg> Only the icons the document uses</li>
-    <li class="done"><svg class="icon"><use href="#i-check"/></svg> Only the component CSS/JS in play</li>
-  </ul>
-</div>
-  <dl class="glossary">
-  <dt>Component</dt><dd><code>&lt;rr-tile&gt;</code>, <code>&lt;rr-callout&gt;</code>, <code>&lt;rr-scorecard&gt;</code> — a tag you compose instead of styling from scratch.</dd>
-    <dt>Tree-shaking</dt><dd>Unused CSS, scripts, and icons never reach the output.</dd>
-</dl>
-  <p class="caption">See the <a href="/demo">full component demo</a> · full reference in the <a href="https://github.com/hhushhas/rr#components">README</a>.</p>
+  <p><code>rr build</code> expands the tags, then inlines <b>only</b> the CSS, JS, and icons those components use — light and dark themes included. The file opens from disk, travels as an attachment, and makes zero network requests.</p>
 </section>
 
-<section id="install">
-  <h2><svg class="icon"><use href="#i-gear"/></svg> Install</h2>
-  <div class="cols2">
+<section id="why">
+  <h2><svg class="icon"><use href="#i-bolt"/></svg> Why it exists</h2>
+  <div class="tiles">
   <div class="card">
-  <p class="kicker">npm</p><pre style="margin:0"><code>npm install -g rr-cli</code></pre>
+  <p class="kicker"><svg class="icon"><use href="#i-shield"/></svg> Correct by construction</p>
+  <b class="">fails loudly</b>
+  <span class="caption">unknown tag, missing prop, bad icon — the build stops and names the fix</span>
 </div>
     <div class="card">
-  <p class="kicker">Homebrew · macOS</p><pre style="margin:0"><code>brew install \
-  hhushhas/tap/rr</code></pre>
+  <p class="kicker"><svg class="icon"><use href="#i-folder"/></svg> One artifact</p>
+  <b class="">1 file</b>
+  <span class="caption">CSS, JS, icons inlined; tree-shaken to what the page uses</span>
 </div>
+    <div class="card">
+  <p class="kicker"><svg class="icon"><use href="#i-users"/></svg> Made for agents</p>
+  <b class="">30+ tags</b>
+  <span class="caption">a small vocabulary beats an 800-line style guide</span>
+</div>
+</div>
+  <p>rr began as a fix for AI-generated documents: agents hand-writing HTML produce drifting, boilerplate design. Give them components instead and drift becomes a build error — every document comes out deliberate, for a fraction of the tokens. It works the same when the author is a person.</p>
+</section>
+
+<section id="live">
+  <h2><svg class="icon"><use href="#i-puzzle"/></svg> Try 0.2.0 right here</h2>
+  <p><b>Annotate code.</b> This is rr's real expansion loop. Click a line to attach a note — shift-click extends — then the floating button copies every note as paste-ready text for a review thread or a coding agent.</p>
+  <figure class="rr-code" data-code-id="code-1" data-file="src/build.js" data-start="118">
+<figcaption><svg class="icon"><use href="#i-doc"/></svg> <code>src/build.js</code><span class="grow"></span><span class="hint">click a line to annotate · shift-click extends</span></figcaption>
+<pre class="shiki shiki-themes github-light github-dark" style="background-color:#fff;--shiki-dark-bg:#24292e;color:#24292e;--shiki-dark:#e1e4e8" tabindex="0"><code style="--ln-start:117"><span class="line"><span style="color:#D73A49;--shiki-dark:#F97583">const</span><span style="color:#005CC5;--shiki-dark:#79B8FF"> m</span><span style="color:#D73A49;--shiki-dark:#F97583"> =</span><span style="color:#24292E;--shiki-dark:#E1E4E8"> doc.</span><span style="color:#6F42C1;--shiki-dark:#B392F0">match</span><span style="color:#24292E;--shiki-dark:#E1E4E8">(</span><span style="color:#005CC5;--shiki-dark:#79B8FF">INNERMOST_RE</span><span style="color:#24292E;--shiki-dark:#E1E4E8">);</span></span>
+<span class="line"><span style="color:#D73A49;--shiki-dark:#F97583">if</span><span style="color:#24292E;--shiki-dark:#E1E4E8"> (</span><span style="color:#D73A49;--shiki-dark:#F97583">!</span><span style="color:#24292E;--shiki-dark:#E1E4E8">m) </span><span style="color:#D73A49;--shiki-dark:#F97583">break</span><span style="color:#24292E;--shiki-dark:#E1E4E8">;</span></span>
+<span class="line"><span style="color:#D73A49;--shiki-dark:#F97583">const</span><span style="color:#005CC5;--shiki-dark:#79B8FF"> comp</span><span style="color:#D73A49;--shiki-dark:#F97583"> =</span><span style="color:#24292E;--shiki-dark:#E1E4E8"> components.</span><span style="color:#6F42C1;--shiki-dark:#B392F0">get</span><span style="color:#24292E;--shiki-dark:#E1E4E8">(name);</span></span>
+<span class="line"><span style="color:#D73A49;--shiki-dark:#F97583">if</span><span style="color:#24292E;--shiki-dark:#E1E4E8"> (</span><span style="color:#D73A49;--shiki-dark:#F97583">!</span><span style="color:#24292E;--shiki-dark:#E1E4E8">comp) </span><span style="color:#6F42C1;--shiki-dark:#B392F0">fail</span><span style="color:#24292E;--shiki-dark:#E1E4E8">(</span><span style="color:#032F62;--shiki-dark:#9ECBFF">`unknown component: ${</span><span style="color:#24292E;--shiki-dark:#E1E4E8">name</span><span style="color:#032F62;--shiki-dark:#9ECBFF">}. Known: ${</span><span style="color:#24292E;--shiki-dark:#E1E4E8">known</span><span style="color:#032F62;--shiki-dark:#9ECBFF">}`</span><span style="color:#24292E;--shiki-dark:#E1E4E8">);</span></span>
+<span class="line"><span style="color:#24292E;--shiki-dark:#E1E4E8">usedFiles.</span><span style="color:#6F42C1;--shiki-dark:#B392F0">add</span><span style="color:#24292E;--shiki-dark:#E1E4E8">(comp.file);</span></span></code></pre>
+</figure>
+  <p><b>Quiz your readers.</b> Answers persist, and "Copy results" exports the misses — a follow-up conversation starts from the reader's actual gaps.</p>
+  <section class="quiz" data-quiz="rr-basics">
+  <p class="kicker"><svg class="icon"><use href="#i-puzzle"/></svg> Two questions about rr</p>
+  <div class="q" data-q data-qtext="Where does the CSS in a built document come from?">
+  <p class="qt">Where does the CSS in a built document come from?</p>
+  <button type="button" class="choice" data-correct="">A stylesheet CDN</button>
+      <button type="button" class="choice" data-correct="1">Only the components the document actually uses</button>
+      <button type="button" class="choice" data-correct="">A global stylesheet copied into every file</button>
+      <div class="why" hidden><b>Why.</b> Each component carries its own scoped CSS and JS; the build inlines just the ones your tags touch. Small pages stay small.</div>
+</div>
+    <div class="q" data-q data-qtext="What happens if a document passes a prop a component doesn't have?">
+  <p class="qt">What happens if a document passes a prop a component doesn't have?</p>
+  <button type="button" class="choice" data-correct="">It's silently ignored</button>
+      <button type="button" class="choice" data-correct="1">The build fails and lists the valid props</button>
+      <div class="why" hidden><b>Why.</b> Every mistake is a loud, named error — that's what keeps generated documents from quietly drifting off-design.</div>
+</div>
+  <div class="quiz-foot">
+    <span class="score" data-quiz-score></span>
+    <span class="grow"></span>
+    <button type="button" data-quiz-copy>Copy results</button>
+    <button type="button" data-quiz-reset>Reset</button>
+  </div>
+</section>
+</section>
+
+<section id="library">
+  <h2><svg class="icon"><use href="#i-folder"/></svg> The library, in the flesh</h2>
+  <p>Status, flows, verdicts, checklists, stages, sliders — <a href="https://github.com/hhushhas/rr#components">full reference on GitHub</a>. A few, live:</p>
+  <div class="journey">
+  <span class="stop ">write .rr.html</span><span class="sep"><svg class="icon"><use href="#i-arrow-right"/></svg></span><span class="stop new">rr build</span><span class="sep"><svg class="icon"><use href="#i-arrow-right"/></svg></span><span class="stop ">one file, shipped</span>
+</div>
+  <ol class="phases">
+  <li class="done">Author<span class="caption">a few tags</span></li>
+    <li class="done">Build<span class="caption">~10 ms</span></li>
+    <li class="now">Read<span class="caption">from disk</span></li>
+    <li class="">Annotate<span class="caption">notes flow back</span></li>
+</ol>
+  <div class="scorecard">
+  <div class="row head"><span>Promised (spec)</span><span>Delivered (debrief)</span><span>Verdict</span></div>
+  <div class="row"><span>Zero runtime dependencies</span><span>Pure Node; shiki optional, build-time only</span><span class="badge green">kept</span></div>
+    <div class="row"><span>Works offline, forever</span><span>No requests — the file is the app</span><span class="badge green">kept</span></div>
+    <div class="row"><span>Decks / slides format</span><span>Documents only, for now</span><span class="badge amber">planned</span></div>
 </div>
   <div class="card">
-  <p class="kicker">Scoop · Windows</p><pre style="margin:0"><code>scoop install https://raw.githubusercontent.com/hhushhas/rr/main/scoop/rr.json</code></pre>
+  <p class="kicker">Every build ships</p>
+  <ul class="checklist">
+    <li class="done"><svg class="icon"><use href="#i-check"/></svg> Warm light and charcoal dark themes</li>
+    <li class="done"><svg class="icon"><use href="#i-check"/></svg> Tree-shaken inline icon sprite</li>
+    <li class="done"><svg class="icon"><use href="#i-check"/></svg> Hover definitions, keyboard-focusable</li>
+    <li class="todo"><span class="cbox"></span> Your document — <code>rr init report</code></li>
+  </ul>
 </div>
-  <p><a href="https://github.com/hhushhas/rr">GitHub</a> · <a href="https://www.npmjs.com/package/rr-cli">npm</a> · MIT licensed</p>
 </section>
+
+<p class="foot">Built with rr, obviously — <a href="https://github.com/hhushhas/rr/blob/main/site/index.rr.html">view this page's source</a> · <a href="/demo">full component demo</a> · <a href="https://github.com/hhushhas/rr">GitHub</a> · MIT © Hasan Shoaib</p>
+
+<script>
+// seams: label each rendered component with the tag that produced it
+(() => {
+  const SPEC = [
+    [".callout", "rr-callout"], [".tiles", "rr-tiles"], [".panes", "rr-panes"],
+    [".journey", "rr-journey"], ["ol.phases", "rr-phases"], [".scorecard", "rr-scorecard"],
+    ["ul.checklist", "rr-checklist"], [".progress-row", "rr-progress"],
+    [".quiz", "rr-quiz"], [".rr-code", "rr-code"],
+  ];
+  for (const [sel, tag] of SPEC)
+    document.querySelectorAll(sel).forEach((el) => {
+      el.classList.add("specimen");
+      const s = document.createElement("span");
+      s.className = "seam";
+      s.textContent = "<" + tag + ">";
+      el.appendChild(s);
+    });
+
+  const nav = document.querySelector("nav.toc");
+  nav.querySelector('a[href="#top"]').outerHTML =
+    '<span class="brand">rr</span><span class="caption">v0.2.0</span><span class="grow"></span>';
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.textContent = "seams";
+  btn.setAttribute("aria-pressed", "true");
+  btn.addEventListener("click", () => {
+    const off = document.body.classList.toggle("seams-off");
+    btn.setAttribute("aria-pressed", String(!off));
+  });
+  nav.append(btn);
+
+  document.getElementById("copy-install").addEventListener("click", async (ev) => {
+    try { await navigator.clipboard.writeText(document.getElementById("install-cmd").textContent); } catch {}
+    ev.target.textContent = "Copied";
+    setTimeout(() => { ev.target.textContent = "Copy"; }, 1500);
+  });
+})();
+</script>
 </main>
 <script>
+(() => {
+  const KEY = "rr-ann:" + location.pathname;
+  const load = () => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch { return {}; } };
+  const store = load();
+  const save = () => localStorage.setItem(KEY, JSON.stringify(store));
+  const blocks = [...document.querySelectorAll("figure[data-code-id]")];
+  if (!blocks.length) return;
+
+  const bar = document.createElement("div");
+  bar.className = "ann-bar";
+  bar.hidden = true;
+  bar.innerHTML = '<button type="button" class="primary" data-ann-copy></button><button type="button" data-ann-clear>Clear</button>';
+  document.body.append(bar);
+  const copyBtn = bar.querySelector("[data-ann-copy]");
+
+  const anns = (b) => (store[b.dataset.codeId] ??= []);
+  const lines = (b) => [...b.querySelectorAll(".line")];
+  const lineNo = (b, el) => Number(b.dataset.start) + lines(b).indexOf(el);
+  const total = () => blocks.reduce((t, b) => t + anns(b).length, 0);
+
+  function render(b) {
+    b.querySelectorAll(".ann-note, .ann-editor").forEach((n) => n.remove());
+    lines(b).forEach((l) => l.classList.remove("annotated", "sel"));
+    const ls = lines(b);
+    for (const a of anns(b).slice().sort((x, y) => x.s - y.s)) {
+      const startIdx = a.s - Number(b.dataset.start);
+      const endIdx = a.e - Number(b.dataset.start);
+      for (let i = startIdx; i <= endIdx && i < ls.length; i++) ls[i].classList.add("annotated");
+      const note = document.createElement("span");
+      note.className = "ann-note";
+      note.innerHTML = `<span class="meta">L${a.s}${a.e > a.s ? "–" + a.e : ""} · click to edit</span>`;
+      note.append(a.text);
+      note.addEventListener("click", () => edit(b, a.s, a.e, a));
+      ls[Math.min(endIdx, ls.length - 1)].after(note);
+    }
+    const n = total();
+    bar.hidden = !n;
+    copyBtn.textContent = `Copy ${n} annotation${n === 1 ? "" : "s"}`;
+  }
+
+  function edit(b, s, e, existing) {
+    document.querySelectorAll(".ann-editor").forEach((x) => x.remove());
+    render(b);
+    const ls = lines(b);
+    const startIdx = s - Number(b.dataset.start);
+    const endIdx = e - Number(b.dataset.start);
+    for (let i = startIdx; i <= endIdx && i < ls.length; i++) ls[i].classList.add("sel");
+    const ed = document.createElement("span");
+    ed.className = "ann-editor";
+    ed.innerHTML = `<textarea placeholder="Note for L${s}${e > s ? "–" + e : ""} — will be copied for the agent"></textarea>
+      <span class="row"><span class="grow"></span>
+      ${existing ? '<button type="button" data-del>Delete</button>' : ""}
+      <button type="button" data-cancel>Cancel</button>
+      <button type="button" class="primary" data-save>Save</button></span>`;
+    const ta = ed.querySelector("textarea");
+    if (existing) ta.value = existing.text;
+    ed.querySelector("[data-save]").addEventListener("click", () => {
+      const text = ta.value.trim();
+      if (existing) existing.text = text || existing.text;
+      else if (text) anns(b).push({ s, e, text });
+      if (existing && !text) drop(b, existing);
+      save(); render(b);
+    });
+    ed.querySelector("[data-cancel]").addEventListener("click", () => render(b));
+    ed.querySelector("[data-del]")?.addEventListener("click", () => { drop(b, existing); save(); render(b); });
+    ta.addEventListener("keydown", (ev) => {
+      if (ev.key === "Enter" && !ev.shiftKey) { ev.preventDefault(); ed.querySelector("[data-save]").click(); }
+      if (ev.key === "Escape") render(b);
+    });
+    ls[Math.min(endIdx, ls.length - 1)].after(ed);
+    ta.focus();
+  }
+
+  const drop = (b, a) => { store[b.dataset.codeId] = anns(b).filter((x) => x !== a); };
+
+  let anchor = null; // { block, line } for shift-click ranges
+  for (const b of blocks)
+    b.addEventListener("click", (ev) => {
+      const l = ev.target.closest(".line");
+      if (!l || ev.target.closest(".ann-note, .ann-editor")) return;
+      const n = lineNo(b, l);
+      if (ev.shiftKey && anchor && anchor.block === b) {
+        edit(b, Math.min(anchor.n, n), Math.max(anchor.n, n));
+      } else {
+        anchor = { block: b, n };
+        edit(b, n, n);
+      }
+    });
+
+  function exportText() {
+    const out = [`Annotations — ${document.title}`];
+    for (const b of blocks) {
+      const ls = lines(b);
+      for (const a of anns(b).slice().sort((x, y) => x.s - y.s)) {
+        out.push("", `${b.dataset.file} L${a.s}${a.e > a.s ? "-" + a.e : ""}:`);
+        for (let i = a.s - Number(b.dataset.start); i <= a.e - Number(b.dataset.start) && i < ls.length; i++)
+          out.push(`> ${ls[i].textContent.replace(/\s+$/, "")}`);
+        out.push(`note: ${a.text}`);
+      }
+    }
+    return out.join("\n");
+  }
+
+  copyBtn.addEventListener("click", async () => {
+    const text = exportText();
+    try { await navigator.clipboard.writeText(text); }
+    catch {
+      const ta = document.createElement("textarea");
+      ta.value = text; document.body.append(ta); ta.select();
+      document.execCommand("copy"); ta.remove();
+    }
+    const prev = copyBtn.textContent;
+    copyBtn.textContent = "Copied — paste to the agent";
+    setTimeout(() => { copyBtn.textContent = prev; }, 1600);
+  });
+  bar.querySelector("[data-ann-clear]").addEventListener("click", () => {
+    for (const b of blocks) store[b.dataset.codeId] = [];
+    save(); blocks.forEach(render);
+  });
+
+  blocks.forEach(render);
+})();
+
 document.querySelectorAll("[data-fullscreen]").forEach((b) =>
   b.addEventListener("click", () =>
     document.fullscreenElement
@@ -308,6 +570,77 @@ document.querySelectorAll("[data-fullscreen]").forEach((b) =>
 document.querySelectorAll("[data-toggle-pressed]").forEach((b) =>
   b.addEventListener("click", () =>
     b.setAttribute("aria-pressed", String(b.getAttribute("aria-pressed") !== "true"))));
+
+(() => {
+  const KEY = "rr-quiz:" + location.pathname;
+  const load = () => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch { return {}; } };
+  const store = load();
+  const save = () => localStorage.setItem(KEY, JSON.stringify(store));
+
+  document.querySelectorAll("[data-quiz]").forEach((quiz) => {
+    const results = (store[quiz.dataset.quiz] ??= {});
+    const questions = [...quiz.querySelectorAll("[data-q]")];
+
+    const answer = (q, btn, persist) => {
+      const i = questions.indexOf(q);
+      q.classList.add("answered");
+      q.querySelectorAll(".choice").forEach((c) => { if (c.dataset.correct) c.classList.add("is-correct"); });
+      btn.classList.add(btn.dataset.correct ? "picked-right" : "picked-wrong");
+      const why = q.querySelector(".why");
+      if (why) why.hidden = false;
+      if (persist) {
+        results[i] = { chose: btn.textContent.trim(), right: !!btn.dataset.correct };
+        save();
+      }
+      score();
+    };
+
+    const score = () => {
+      const done = Object.keys(results).length;
+      const right = Object.values(results).filter((r) => r.right).length;
+      quiz.querySelector("[data-quiz-score]").textContent =
+        done ? `${right}/${questions.length} right · ${done}/${questions.length} answered` : "";
+    };
+
+    questions.forEach((q, i) => {
+      q.querySelectorAll(".choice").forEach((btn) =>
+        btn.addEventListener("click", () => { if (!q.classList.contains("answered")) answer(q, btn, true); }));
+      const saved = results[i];
+      if (saved) {
+        const btn = [...q.querySelectorAll(".choice")].find((c) => c.textContent.trim() === saved.chose);
+        if (btn) answer(q, btn, false);
+      }
+    });
+    score();
+
+    quiz.querySelector("[data-quiz-copy]").addEventListener("click", async (ev) => {
+      const right = Object.values(results).filter((r) => r.right).length;
+      const out = [`Quiz results — ${document.title}: ${right}/${questions.length}`];
+      questions.forEach((q, i) => {
+        const r = results[i];
+        if (!r) { out.push(`— Q${i + 1} "${q.dataset.qtext}" — unanswered`); return; }
+        if (r.right) { out.push(`✓ Q${i + 1} "${q.dataset.qtext}"`); return; }
+        const correct = [...q.querySelectorAll(".choice")].find((c) => c.dataset.correct)?.textContent.trim();
+        out.push(`✗ Q${i + 1} "${q.dataset.qtext}" — chose "${r.chose}", correct: "${correct}"`);
+      });
+      const text = out.join("\n");
+      try { await navigator.clipboard.writeText(text); }
+      catch {
+        const ta = document.createElement("textarea");
+        ta.value = text; document.body.append(ta); ta.select();
+        document.execCommand("copy"); ta.remove();
+      }
+      const b = ev.currentTarget, prev = b.textContent;
+      b.textContent = "Copied — paste to the agent";
+      setTimeout(() => { b.textContent = prev; }, 1600);
+    });
+
+    quiz.querySelector("[data-quiz-reset]").addEventListener("click", () => {
+      store[quiz.dataset.quiz] = {};
+      save(); location.reload();
+    });
+  });
+})();
 </script>
 </body>
 </html>

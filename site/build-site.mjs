@@ -13,8 +13,8 @@ const out = join(siteDir, "public", "index.html");
 execFileSync(process.execPath, [join(repoRoot, "bin", "rr.js"), "build", src, "-o", out], { stdio: "inherit" });
 
 const url = "https://rr.hasanshoaib.com/";
-const title = "rr — a build system for composable HTML documents";
-const desc = "Compose <rr-*> components into one self-contained, themed HTML file. Zero-dependency Node CLI.";
+const title = "rr — compose HTML documents from components";
+const desc = "Compose <rr-*> components into one self-contained, themed HTML file. Zero-dependency Node CLI. Annotate code, quiz readers, ship one file.";
 const meta = `<meta name="description" content="${desc}">
 <link rel="canonical" href="${url}">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
