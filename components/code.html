@@ -4,36 +4,35 @@
      agent-ready text via the floating "Copy annotations" bar. -->
 
 <style>
-.rr-code { margin: 1rem 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
-.rr-code figcaption { display: flex; align-items: center; gap: .5rem; padding: .4rem .75rem; background: var(--card); border-bottom: 1px solid var(--line); font-size: .8rem; color: var(--muted); }
-.rr-code figcaption code { background: none; padding: 0; }
+.rr-code { margin: var(--s2) 0; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.rr-code figcaption { display: flex; align-items: center; gap: var(--s1); padding: var(--s1) var(--s2); background: var(--surface); border-bottom: 1px solid var(--line); font: 500 var(--t-chrome)/1.4 var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.rr-code figcaption code { background: none; border: 0; padding: 0; text-transform: none; }
 .rr-code figcaption .grow { flex: 1; }
-.rr-code figcaption .hint { font-size: .72rem; opacity: .8; }
-.rr-code pre.shiki { margin: 0; border: 0; border-radius: 0; padding: .6rem 0; background: var(--card) !important; overflow-x: auto; }
+.rr-code figcaption .hint { text-transform: none; letter-spacing: 0; opacity: .8; }
+.rr-code pre.shiki { margin: 0; border: 0; border-radius: 0; padding: var(--s1) 0; background: var(--surface) !important; overflow-x: auto; font: 400 var(--t-support)/1.55 var(--mono); }
 @media (prefers-color-scheme: dark) {
   .rr-code pre.shiki, .rr-code pre.shiki span { color: var(--shiki-dark, inherit) !important; }
 }
-.rr-code .line { display: inline-block; width: 100%; padding-right: .75rem; cursor: pointer; }
+.rr-code .line { position: relative; display: inline-block; width: 100%; padding-right: var(--s2); cursor: pointer; }
 .rr-code code { counter-reset: line var(--ln-start, 0); }
 .rr-code .line::before { counter-increment: line; content: counter(line); display: inline-block; width: 2.6em; padding-right: .9em; text-align: right; color: var(--muted); opacity: .55; user-select: none; }
 .rr-code .line:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); }
 .rr-code .line.sel { background: color-mix(in srgb, var(--accent) 14%, transparent); }
-.rr-code .line.annotated { box-shadow: inset 3px 0 0 var(--amber); }
+.rr-code .line.annotated::after { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--amber); }
 .rr-code .ann-note, .rr-code .ann-editor {
-  display: block; white-space: normal; margin: .25rem .75rem .5rem 3.5em; padding: .5rem .75rem;
-  background: var(--bg); border: 1px solid var(--line); border-left: 3px solid var(--amber); border-radius: 8px;
-  font: .85rem/1.5 ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  display: block; white-space: normal; margin: var(--s1) var(--s2) var(--s1) 3.5em; padding: var(--s1) var(--s2);
+  background: var(--bg); border: 1px solid var(--line); border-left: 3px solid var(--amber); border-radius: var(--radius);
+  font: 400 var(--t-support)/1.5 var(--text);
 }
 .rr-code .ann-note { cursor: pointer; }
-.rr-code .ann-note .meta { color: var(--muted); font-size: .72rem; display: block; margin-bottom: .15rem; }
-.rr-code .ann-editor textarea { width: 100%; min-height: 3.2em; resize: vertical; font: inherit; color: var(--fg); background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: .4rem .6rem; }
-.rr-code .ann-editor .row { display: flex; gap: .5rem; margin-top: .4rem; align-items: center; }
+.rr-code .ann-note .meta { color: var(--muted); font: 500 var(--t-chrome)/1.4 var(--mono); text-transform: uppercase; letter-spacing: .04em; display: block; margin-bottom: .15rem; }
+.rr-code .ann-editor textarea { width: 100%; min-height: 3.2em; resize: vertical; font: inherit; color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: var(--s1) var(--s2); }
+.rr-code .ann-editor .row { display: flex; gap: var(--s1); margin-top: .4rem; align-items: center; }
 .rr-code .ann-editor .row .grow { flex: 1; }
 .ann-bar {
-  position: fixed; right: 1rem; bottom: 1rem; z-index: 30;
-  background: var(--card); border: 1px solid var(--line); border-radius: 999px;
-  padding: .35rem .5rem; display: flex; gap: .5rem; align-items: center;
-  box-shadow: 0 4px 12px rgba(0,0,0,.15);
+  position: fixed; right: var(--s2); bottom: var(--s2); z-index: 30;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: var(--s1); display: flex; gap: var(--s1); align-items: center;
 }
 .ann-bar[hidden] { display: none; }
 </style>

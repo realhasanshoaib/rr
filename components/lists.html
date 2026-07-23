@@ -1,8 +1,9 @@
-<!-- Checklist card and glossary grid. -->
+<!-- Checklist card and glossary grid. The checklist label is the card's first,
+     largest line (descending column); items follow. -->
 
 <template name="checklist" props="label">
-<div class="card">
-  <p class="kicker">{label}</p>
+<div class="card checklist-card">
+  <p class="checklist-title">{label}</p>
   <ul class="checklist">
     <slot/>
   </ul>
@@ -28,14 +29,15 @@
 </template>
 
 <style>
-ul.checklist { list-style: none; padding: 0; margin: .25rem 0; }
-ul.checklist li { display: flex; gap: .6rem; align-items: baseline; padding: .3rem 0; }
+.checklist-title { font: 600 var(--t-sub)/1.35 var(--text); margin: 0 0 var(--s1); }
+ul.checklist { list-style: none; padding: 0; margin: 0; }
+ul.checklist li { display: flex; gap: var(--s1); align-items: baseline; padding: 4px 0; font-size: var(--t-support); }
 ul.checklist li .icon { flex: none; vertical-align: -.15em; }
 ul.checklist li.done .icon { color: var(--green); }
-ul.checklist li.todo .cbox { flex: none; width: .95em; height: .95em; border: 1.5px solid var(--muted); border-radius: 4px; align-self: center; }
+ul.checklist li.todo .cbox { flex: none; width: .95em; height: .95em; border: 1.5px solid var(--muted); border-radius: 2px; align-self: center; }
 ul.checklist li.todo { color: var(--muted); }
-dl.glossary { display: grid; grid-template-columns: max-content 1fr; gap: .4rem 1.5rem; margin: 1rem 0; }
-dl.glossary dt { font-weight: 600; font-size: .95rem; }
-dl.glossary dd { margin: 0; font-size: .95rem; }
-@media (max-width: 520px) { dl.glossary { grid-template-columns: 1fr; } dl.glossary dd { margin-bottom: .5rem; } }
+dl.glossary { display: grid; grid-template-columns: max-content 1fr; gap: var(--s1) var(--s3); margin: var(--s2) 0; }
+dl.glossary dt { font-weight: 600; font-size: var(--t-support); }
+dl.glossary dd { margin: 0; font-size: var(--t-support); color: var(--muted); }
+@media (max-width: 520px) { dl.glossary { grid-template-columns: 1fr; } dl.glossary dd { margin-bottom: var(--s1); } }
 </style>

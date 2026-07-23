@@ -1,0 +1,49 @@
+<rr-doc title="Kit demo — deck format">
+<rr-deck id="demo">
+
+<rr-slide spine="Start">
+  <h1>Reader-paced decks</h1>
+  <p class="lede">Structure you can see, content you earn one step at a time. The spine on the left is always on; the material arrives at the pace of your arrow key.</p>
+  <rr-callout>Press <kbd>→</kbd> or <kbd>space</kbd> to reveal the next step, then advance; <kbd>←</kbd> retreats the same way. The bottom-right button flattens the deck into a scrollable document.</rr-callout>
+</rr-slide>
+
+<rr-slide spine="Steps" title="Ghost waypoints">
+  <p>A stepped slide reveals one <b>rr-step</b> at a time. Every step's coordinate is visible from the start — you can survey the route — but its body stays hidden with its space reserved, so nothing reflows when it arrives. Watch the rail: this tick has subdivided, one dash per step.</p>
+  <rr-step wp="WP 1 · Parse">
+    <p>The build reads your source and finds every <code>&lt;rr-*&gt;</code> tag, starting from the <code>rr-doc</code> shell.</p>
+  </rr-step>
+  <rr-step wp="WP 2 · Expand">
+    <p>Each tag is matched against its template; props become attributes, children drop into slots, defaults fill in.</p>
+  </rr-step>
+  <rr-step wp="WP 3 · Emit">
+    <p>One self-contained HTML file — canonical CSS, both palettes, a tree-shaken sprite, zero external requests.</p>
+  </rr-step>
+</rr-slide>
+
+<rr-slide spine="Beats" title="Beats still work">
+  <p>The older <b>rr-beat</b> chunk is unchanged: a future beat is fully hidden (its space reserved), and an earlier beat recedes to context once a newer one lands. Hover a receded beat to restore it.</p>
+  <div id="beat-target">
+    <rr-journey>
+      <rr-stop>author writes</rr-stop><rr-sep/><rr-stop tone="new">build expands</rr-stop><rr-sep/><rr-stop>reader steps</rr-stop>
+    </rr-journey>
+  </div>
+  <rr-beat mark="beat-target">
+    <p>This beat carries <code>mark="beat-target"</code> — as it appears, the flow above lights up. That's the teacher circling earlier work.</p>
+  </rr-beat>
+  <rr-beat>
+    <rr-checklist label="What a deck author promises">
+      <rr-done>Every step is a move in the argument, not a bullet</rr-done>
+      <rr-todo>Late arrivals can rewind to where they got lost</rr-todo>
+    </rr-checklist>
+  </rr-beat>
+</rr-slide>
+
+<rr-slide spine="Recall" title="Close with retrieval">
+  <p>End a stretch the way the kit prefers — a recall card that asks before it tells.</p>
+  <rr-recall id="deck-recall" title="Deck recall">
+    <rr-flashcard q="What does a ghost waypoint show, and what does it hide?" a="It shows the coordinate and reserves the space; it hides the body until revealed.">You can survey the whole route without reading ahead — orientation without spoiling the pace.</rr-flashcard>
+  </rr-recall>
+</rr-slide>
+
+</rr-deck>
+</rr-doc>

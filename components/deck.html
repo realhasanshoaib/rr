@@ -1,0 +1,237 @@
+<!-- Deck: the Traverse chassis — a fixed spine with per-slide ticks and per-step
+     sub-ticks, a corner coordinate readout, and a bottom HUD. Reader-paced:
+     each → reveals the next step before advancing the slide; ← un-reveals
+     before retreating. Steps are ghost waypoints — an unrevealed rr-step shows
+     its mono coordinate while its body stays hidden with space reserved, so
+     nothing reflows. rr-beat is the older full-hide chunk; both count as steps.
+     The HUD's "read as document" flattens the source into a scrollable page. -->
+
+<template name="deck" props="id=deck">
+<div class="deck is-play" id="{id}">
+  <nav class="spine deck-spine" aria-label="Slides">
+    <div class="spine-mark"><rr-icon name="route"/> Deck</div>
+    <div class="spine-rail" data-deck-rail></div>
+    <div class="spine-pos" data-deck-pos></div>
+  </nav>
+  <div class="corner" data-deck-corner aria-hidden="true"></div>
+  <slot/>
+  <footer class="hud">
+    <button type="button" class="hud-btn" data-deck-nav="-1" aria-label="Back one step">←</button>
+    <button type="button" class="hud-btn" data-deck-nav="1" aria-label="Next step">→</button>
+    <span class="hud-hint">→ reveals, then advances · ← retreats · click the rail</span>
+    <div class="hud-bar" aria-hidden="true"><i></i></div>
+    <span class="hud-count" data-deck-count></span>
+    <button type="button" class="hud-btn" data-deck-read aria-pressed="false">read as document</button>
+  </footer>
+</div>
+</template>
+
+<template name="slide" props="kicker= title= spine=">
+<section class="slide" data-spine="{spine}">
+  <div class="slide-head">
+    <h2 class="slide-title">{title}</h2>
+    <span class="slide-kicker klabel">{kicker}</span>
+  </div>
+  <slot/>
+</section>
+</template>
+
+<template name="beat" props="mark=">
+<div class="beat" data-mark="{mark}"><slot/></div>
+</template>
+
+<template name="step" props="wp=">
+<div class="step">
+  <div class="step-body"><slot/></div>
+  <span class="step-wp">{wp}</span>
+</div>
+</template>
+
+<style>
+/* play mode: the deck owns the viewport, one slide at a time --------------- */
+body:has(.deck.is-play) main { display: block; padding: 0; }
+.deck.is-play .slide { display: none; }
+.deck.is-play .slide.active {
+  display: grid; min-height: 100dvh; overflow-y: auto;
+  padding: var(--s6) var(--s4) var(--s7) calc(var(--spine-w) + var(--s4));
+  grid-template-columns: 1fr min(880px, 100%) 1fr; align-content: center; row-gap: var(--s1);
+}
+.deck .slide > * { grid-column: 2; min-width: 0; }
+.deck .slide > .wide { grid-column: 1 / -1; width: min(1080px, 100%); justify-self: center; }
+.deck .slide h1 { font: 600 44px/1.15 var(--text); letter-spacing: -.015em; margin: 0 0 var(--s2); }
+.deck .slide h2, .deck .slide .slide-title { font: 600 30px/1.2 var(--text); letter-spacing: -.012em; margin: 0; border-bottom: 0; padding: 0; }
+.slide-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: var(--s1) var(--s2); margin-bottom: var(--s2); }
+.slide-head .slide-kicker { margin-left: auto; }
+.slide-title:empty, .slide-kicker:empty { display: none; }
+.slide-head:has(.slide-title:empty):has(.slide-kicker:empty) { display: none; }
+
+/* the spine, deck flavor: position readout + subdividing ticks ------------- */
+.spine-pos { padding: var(--s1) 0 0 var(--s2); font: 500 var(--t-chrome)/1.4 var(--mono); letter-spacing: .04em; color: var(--muted); }
+.spine-tick { background: none; border: 0; width: 100%; cursor: pointer; font: inherit; }
+.spine-sub { display: none; flex-basis: 100%; margin: 3px 0 0 var(--s3); gap: 5px; align-items: center; }
+.spine-tick[aria-current="true"] .spine-sub { display: flex; }
+.spine-sub i { width: 7px; height: 2px; background: var(--line); }
+.spine-sub i.on { background: var(--accent); }
+.spine-sub i.now { width: 11px; }
+.corner { position: fixed; top: 14px; right: var(--s2); z-index: 20; font: 600 var(--t-chrome)/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+
+/* the HUD ----------------------------------------------------------------- */
+.deck .hud {
+  position: fixed; inset: auto 0 0 var(--spine-w); z-index: 20; display: flex; align-items: center; gap: var(--s2);
+  padding: 7px var(--s2); border-top: 1px solid var(--line);
+  background: color-mix(in srgb, var(--bg) 90%, transparent); backdrop-filter: blur(8px);
+}
+.hud-btn { font: 500 var(--t-chrome)/1 var(--mono); color: var(--muted); border: 1px solid var(--line); border-radius: var(--radius); padding: 6px 12px; background: var(--bg); }
+.hud-btn:hover { color: var(--fg); border-color: var(--muted); }
+.hud-btn[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); }
+.hud-hint { font: 400 var(--t-chrome)/1 var(--mono); color: var(--muted); }
+.hud-bar { flex: 1; min-width: 60px; height: 2px; background: var(--line); }
+.hud-bar > i { display: block; height: 100%; width: 0; background: var(--accent); }
+.hud-count { font: 500 var(--t-chrome)/1 var(--mono); letter-spacing: .06em; color: var(--muted); }
+
+/* beats — the older full-hide chunk: future ones reserve space, past recede - */
+.deck.is-play .beat:not(.is-shown) { visibility: hidden; }
+.deck.is-play .beat.is-done { opacity: .55; }
+.deck.is-play .beat.is-done:hover { opacity: 1; }
+.is-marked { border-radius: var(--radius); outline: 2px solid var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); }
+
+/* steps — ghost waypoints: coordinate visible, body earned, space reserved -- */
+.deck .step { display: grid; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); padding: var(--s2) var(--s3); margin: var(--s2) 0; }
+.deck .step-body { min-width: 0; }
+.deck .step-wp { display: block; margin-top: var(--s2); font: 500 var(--t-support)/1.4 var(--mono); letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+.deck.is-play .step .step-body { visibility: hidden; }
+.deck.is-play .step.is-shown .step-body { visibility: visible; }
+.deck.is-play .step:not(.is-shown) { border-style: dashed; background: transparent; }
+.deck.is-play .step.is-shown .step-wp { color: var(--accent); }
+.deck.is-play .step.is-done .step-wp { color: var(--muted); }
+.deck.is-play .step.is-done .step-body, .deck.is-play .step.is-done .step-body * { color: var(--muted); }
+
+/* document mode: same source, flattened to scroll -------------------------- */
+.deck.is-doc { grid-column: 1 / -1; width: 100%; }
+.deck.is-doc .deck-spine, .deck.is-doc .corner { display: none; }
+.deck.is-doc .slide {
+  display: grid; grid-template-columns: 1fr min(720px, calc(100% - var(--s5))) 1fr;
+  row-gap: var(--s1); padding: var(--s5) 0; border-top: 1px solid var(--line);
+}
+.deck.is-doc .slide:first-of-type { border-top: none; }
+.deck.is-doc .beat, .deck.is-doc .step .step-body { visibility: visible; opacity: 1; }
+.deck.is-doc .step { border-style: solid; }
+.deck.is-doc .hud { left: 0; }
+.deck.is-doc .hud [data-deck-nav], .deck.is-doc .hud-bar, .deck.is-doc .hud-count, .deck.is-doc .hud-hint { display: none; }
+
+@media (max-width: 900px) {
+  .deck-spine, .corner { display: none; }
+  .deck .hud { left: 0; }
+  .deck.is-play .slide.active { padding-left: var(--s3); padding-right: var(--s3); }
+  .deck .slide h1 { font-size: 34px; }
+  .deck .slide h2, .deck .slide .slide-title { font-size: 24px; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .spine-sub i { transition: background .12s ease, width .12s ease; }
+  .deck .beat { transition: opacity .15s ease; }
+  .deck .step .step-body, .deck .step .step-wp { transition: color .15s ease-out; }
+  .hud-bar > i { transition: width .15s ease; }
+}
+</style>
+
+<script>
+document.querySelectorAll(".deck").forEach((deck) => {
+  const slides = [...deck.querySelectorAll(".slide")];
+  if (!slides.length) return;
+  const rail = deck.querySelector("[data-deck-rail]");
+  const spinePos = deck.querySelector("[data-deck-pos]");
+  const corner = deck.querySelector("[data-deck-corner]");
+  const hudCount = deck.querySelector("[data-deck-count]");
+  const hudBar = deck.querySelector(".hud-bar > i");
+  const readBtn = deck.querySelector("[data-deck-read]");
+  const pad = (n) => String(n).padStart(2, "0");
+  const labelOf = (el, j) =>
+    el.dataset.spine || el.querySelector(".slide-title")?.textContent.trim() ||
+    el.querySelector("h1, h2")?.textContent.trim() || "Slide " + (j + 1);
+
+  const model = slides.map((el, j) => ({
+    el, label: labelOf(el, j),
+    steps: [...el.querySelectorAll(".beat, .step")],
+    revealed: 0, sub: null,
+  }));
+
+  model.forEach((s, j) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "spine-tick";
+    b.setAttribute("aria-label", "Slide " + (j + 1) + ": " + s.label);
+    b.innerHTML = '<span class="spine-lab">' + s.label + "</span>";
+    if (s.steps.length) {
+      const sub = document.createElement("span");
+      sub.className = "spine-sub";
+      s.steps.forEach(() => sub.appendChild(document.createElement("i")));
+      b.append(sub); s.sub = sub;
+    }
+    b.addEventListener("click", () => show(j, false));
+    rail.append(b);
+  });
+  const ticks = [...rail.children];
+  let i = -1;
+
+  function renderSteps(s) {
+    s.steps.forEach((el, j) => {
+      el.classList.toggle("is-shown", j < s.revealed);
+      el.classList.toggle("is-done", j < s.revealed - 1);
+    });
+    if (s.sub) [...s.sub.children].forEach((d, j) => {
+      d.classList.toggle("on", j < s.revealed);
+      d.classList.toggle("now", j === s.revealed - 1);
+    });
+    deck.querySelectorAll(".is-marked").forEach((el) => el.classList.remove("is-marked"));
+    const latest = s.revealed > 0 ? s.steps[s.revealed - 1] : null;
+    if (latest && latest.dataset.mark) document.getElementById(latest.dataset.mark)?.classList.add("is-marked");
+    const wp = s.steps.length ? " · " + s.revealed + "/" + s.steps.length : "";
+    spinePos.textContent = pad(i + 1) + "/" + pad(slides.length) + wp;
+    const frac = s.steps.length ? s.revealed / s.steps.length : 1;
+    hudBar.style.width = ((i + frac) / slides.length) * 100 + "%";
+  }
+
+  function show(n, fromBehind) {
+    const next = Math.max(0, Math.min(slides.length - 1, n));
+    if (next === i) return;
+    i = next;
+    model.forEach((s, j) => s.el.classList.toggle("active", j === i));
+    ticks.forEach((t, j) => t.setAttribute("aria-current", j === i ? "true" : "false"));
+    const s = model[i];
+    s.revealed = fromBehind ? s.steps.length : 0;
+    renderSteps(s);
+    hudCount.textContent = (i + 1) + " / " + slides.length;
+    corner.textContent = pad(i + 1) + " · " + s.label.toUpperCase();
+    try { history.replaceState(null, "", "#" + (i + 1)); } catch {}
+  }
+
+  function fwd() { const s = model[i]; if (s.revealed < s.steps.length) { s.revealed++; renderSteps(s); } else show(i + 1, false); }
+  function back() { const s = model[i]; if (s.revealed > 0) { s.revealed--; renderSteps(s); } else show(i - 1, true); }
+
+  function setMode(play) {
+    deck.classList.toggle("is-play", play);
+    deck.classList.toggle("is-doc", !play);
+    readBtn.setAttribute("aria-pressed", String(!play));
+    readBtn.textContent = play ? "read as document" : "present";
+    if (play) { i = -1; show((parseInt(location.hash.slice(1), 10) || 1) - 1, false); }
+  }
+
+  deck.querySelectorAll("[data-deck-nav]").forEach((b) =>
+    b.addEventListener("click", () => (+b.dataset.deckNav > 0 ? fwd() : back())));
+  readBtn.addEventListener("click", () => setMode(!deck.classList.contains("is-play")));
+  addEventListener("hashchange", () => { if (deck.classList.contains("is-play")) show((parseInt(location.hash.slice(1), 10) || 1) - 1, false); });
+  addEventListener("keydown", (e) => {
+    if (!deck.classList.contains("is-play")) return;
+    const t = e.target.tagName;
+    if (/^(INPUT|TEXTAREA|SELECT)$/.test(t)) return;
+    const arrowish = ["ArrowRight", "ArrowDown", "ArrowLeft", "ArrowUp", "PageDown", "PageUp", "Home", "End"].includes(e.key);
+    if (t === "BUTTON" && !arrowish) return; // space/enter belong to the focused control
+    if (["ArrowRight", "ArrowDown", " ", "PageDown"].includes(e.key)) { e.preventDefault(); fwd(); }
+    else if (["ArrowLeft", "ArrowUp", "PageUp"].includes(e.key)) { e.preventDefault(); back(); }
+    else if (e.key === "Home") { e.preventDefault(); show(0, false); }
+    else if (e.key === "End") { e.preventDefault(); show(slides.length - 1, true); }
+  });
+
+  show((parseInt(location.hash.slice(1), 10) || 1) - 1, false);
+});
+</script>

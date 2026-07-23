@@ -1,0 +1,65 @@
+<!-- Structure exhibits: call stacks and function shapes. These are how a reader
+     judges the abstractions — who calls whom, and what flows in and out — before
+     reading (or instead of reading) any body code. Pair two in <rr-panes> for
+     before/after structure. Escape < as &lt; in generic types. -->
+
+<template name="stack" props="label=Calls">
+<figure class="stack">
+  <figcaption><rr-icon name="branch"/> {label}</figcaption>
+  <ul class="frames"><slot/></ul>
+</figure>
+</template>
+
+<template name="frame" props="fn file= note= tone=">
+<li class="frame {tone}">
+  <span class="fn">{fn}</span><span class="fmeta">{file}</span><span class="fnote">{note}</span>
+  <ul class="frames"><slot/></ul>
+</li>
+</template>
+
+<template name="types" props="label=Shapes">
+<figure class="types">
+  <figcaption><rr-icon name="chip"/> {label}</figcaption>
+  <div class="sigs"><slot/></div>
+</figure>
+</template>
+
+<template name="sig" props="name note= tone=">
+<div class="sig {tone}">
+  <code class="sig-name">{name}</code>
+  <code class="sig-shape"><slot/></code>
+  <span class="sig-note">{note}</span>
+</div>
+</template>
+
+<style>
+.stack, .types { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: var(--s2) var(--s3); margin: var(--s2) 0; }
+.stack figcaption, .types figcaption {
+  color: var(--muted); font: 500 var(--t-chrome)/1.4 var(--mono); text-transform: uppercase; letter-spacing: .05em;
+  display: flex; align-items: center; gap: .4rem; margin-bottom: var(--s1);
+}
+.frames { list-style: none; margin: 0; padding: 0; font: 400 var(--t-support)/1.8 var(--mono); }
+.frames .frames { margin-left: .35rem; padding-left: 1.1rem; border-left: 1px solid var(--line); }
+.frames .frames:empty { display: none; }
+.frame > .fn { font-weight: 600; }
+.frame > .fmeta { color: var(--muted); font-size: var(--t-chrome); margin-left: .6rem; }
+.frame > .fnote { font: 400 var(--t-support)/1.5 var(--text); color: var(--muted); margin-left: .6rem; }
+.frame > .fmeta:empty, .frame > .fnote:empty, .sig > .sig-note:empty { display: none; }
+.frame.new > .fn { color: var(--accent); }
+.frame.amber > .fn { color: var(--amber); }
+.frame.gone > .fn, .frame.gone > .fmeta { color: var(--muted); text-decoration: line-through; }
+.sigs { display: grid; gap: 0; }
+.sig { display: grid; grid-template-columns: max-content 1fr; gap: .1rem .85rem; padding: var(--s1) 0; border-top: 1px solid var(--line); font: 400 var(--t-support)/1.6 var(--mono); }
+.sig:first-child { border-top: none; }
+.sig code { background: none; border: 0; padding: 0; }
+.sig-name { font-weight: 600; }
+.sig-shape { white-space: pre-wrap; }
+.sig-note { grid-column: 2; font: 400 var(--t-support)/1.5 var(--text); color: var(--muted); }
+.sig.new .sig-name { color: var(--accent); }
+.sig.amber .sig-name { color: var(--amber); }
+.sig.gone .sig-name, .sig.gone .sig-shape { color: var(--muted); text-decoration: line-through; }
+@media (max-width: 640px) {
+  .sig { grid-template-columns: 1fr; }
+  .sig-note { grid-column: 1; }
+}
+</style>

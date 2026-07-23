@@ -6,6 +6,7 @@
   <rr-toc-link href="#flow" label="Flow"/>
   <rr-toc-link href="#world" label="Mini world"/>
   <rr-toc-link href="#reckoning" label="Reckoning"/>
+  <rr-toc-link href="#recall" label="Recall"/>
 </rr-toc>
 
 <rr-header kicker="Spec companion · demo" title="Lease keeper" icon="clock">
@@ -25,8 +26,8 @@
 
 <rr-section id="scope" title="Scope" icon="shield">
   <rr-cols2>
-    <rr-card><p class="kicker" style="color:var(--green)">✅ In scope</p><ul style="margin:0;padding-left:1.2rem"><li>Lease issue, renew, expire</li></ul></rr-card>
-    <rr-card><p class="kicker" style="color:var(--red)">🚫 Not in scope</p><ul style="margin:0;padding-left:1.2rem"><li>Multi-region failover</li></ul></rr-card>
+    <rr-card><h3 style="margin-top:0;color:var(--green)">In scope</h3><ul style="margin:0;padding-left:1.2rem"><li>Lease issue, renew, expire</li></ul></rr-card>
+    <rr-card><h3 style="margin-top:0;color:var(--red)">Not in scope</h3><ul style="margin:0;padding-left:1.2rem"><li>Multi-region failover</li></ul></rr-card>
   </rr-cols2>
   <rr-checklist label="Launch checklist">
     <rr-done>Shadow mode ran 7 days clean</rr-done>
@@ -36,6 +37,7 @@
     <rr-def term="Lease">A time-limited permit to keep one machine running.</rr-def>
     <rr-def term="Zombie">A machine still billing after its work ended.</rr-def>
   </rr-glossary>
+  <p>Reclaim runs off a <rr-term def="A periodic signal the machine sends to prove it is still doing work; missing enough of them lets the lease lapse.">heartbeat</rr-term>, so a crashed run can't outlive one <rr-term def="Time to live — how long a lease stays valid before it must be renewed.">TTL</rr-term>. Hover or focus a dotted term to read it in the legend panel.</p>
 </rr-section>
 
 <rr-section id="flow" title="What changes" icon="branch">
@@ -81,6 +83,44 @@ async function renewLease(lease: Lease) {
   metrics.count("lease.renewed");
 }
   </rr-code>
+</rr-section>
+
+<rr-section id="structure" title="Structure: stack and shapes" icon="branch">
+  <p>Before/after of who calls whom and what flows through — the abstractions at a glance.</p>
+  <rr-panes>
+    <rr-before label="Before">
+      <rr-stack>
+        <rr-frame fn="handleRequest" file="server.ts">
+          <rr-frame fn="renewLease" file="keeper.ts" note="validation, IO, and billing inline"/>
+        </rr-frame>
+      </rr-stack>
+      <rr-types label="Shapes — before">
+        <rr-sig name="renewLease" tone="gone">(id: string) → Promise&lt;boolean&gt;</rr-sig>
+      </rr-types>
+    </rr-before>
+    <rr-after label="After">
+      <rr-stack>
+        <rr-frame fn="handleRequest" file="server.ts">
+          <rr-frame fn="renewLease" file="keeper.ts">
+            <rr-frame fn="validateTtl" file="keeper.ts" tone="new"/>
+            <rr-frame fn="persistLease" file="store.ts" tone="new" note="all IO now lives here"/>
+          </rr-frame>
+        </rr-frame>
+      </rr-stack>
+      <rr-types label="Shapes — after">
+        <rr-sig name="renewLease" tone="new" note="outcome is a value, not a boolean">(lease: Lease, ttl: Ms) → Renewed | Expired</rr-sig>
+        <rr-sig name="persistLease" tone="new">(lease: Lease) → Promise&lt;void&gt;</rr-sig>
+      </rr-types>
+    </rr-after>
+  </rr-panes>
+</rr-section>
+
+<rr-section id="recall" title="Recall what stuck" icon="signal">
+  <p>The preferred check: flip cards that ask before they tell. Answer in your head, flip, then mark yourself. "Copy missed" emits the cards you missed as agent-ready text.</p>
+  <rr-recall id="lease-recall" title="Lease keeper recall">
+    <rr-flashcard q="What forces a zombie machine off?" a="Lease expiry after a missed TTL.">The reclaim is tied to the lease itself — nothing else needs to notice a crashed run.</rr-flashcard>
+    <rr-flashcard q="Why did the TTL ship at 15 minutes instead of 5?" a="Renewal storms at 5 min crashed the keeper.">Fifteen minutes trades slower reclaim for a keeper that stays up under load.</rr-flashcard>
+  </rr-recall>
 </rr-section>
 
 <rr-section id="quiz" title="Check yourself" icon="puzzle">

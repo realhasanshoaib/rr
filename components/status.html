@@ -18,23 +18,23 @@
 
 <style>
 .badge {
-  display: inline-block; padding: .1rem .6rem; border-radius: 999px; font-size: .75rem;
-  border: 1px solid var(--line); color: var(--muted);
+  display: inline-block; padding: 2px 10px; border-radius: 2px; font: 600 var(--t-support)/1.5 var(--mono);
+  letter-spacing: .05em; text-transform: uppercase; border: 1px solid var(--line); color: var(--muted);
 }
 .badge.accent { color: var(--accent); border-color: var(--accent); }
 .badge.green  { color: var(--green);  border-color: var(--green); }
 .badge.amber  { color: var(--amber);  border-color: var(--amber); }
 .badge.red    { color: var(--red);    border-color: var(--red); }
-.callout { border: 1px solid var(--line); border-left: 3px solid var(--accent); background: var(--card); border-radius: 8px; padding: .75rem 1rem; margin: 1rem 0; }
+.callout { border: 1px solid var(--line); border-left: 3px solid var(--accent); background: var(--surface); border-radius: var(--radius); padding: var(--s2) var(--s3); margin: var(--s2) 0; }
 .callout.amber { border-left-color: var(--amber); }
 .callout.red   { border-left-color: var(--red); }
-.progress { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
+.progress { height: 4px; background: var(--line); overflow: hidden; }
 .progress > i { display: block; height: 100%; background: var(--green); }
 .progress > i.accent { background: var(--accent); }
 .progress > i.amber { background: var(--amber); }
 .progress > i.red { background: var(--red); }
-.progress-row { display: flex; align-items: center; gap: .75rem; margin: .5rem 0; }
+.progress-row { display: flex; align-items: center; gap: var(--s2); margin: var(--s1) 0; }
 .progress-row .progress { flex: 1; }
-.progress-row .n { font-size: .82rem; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.progress-row .n.label { min-width: 7.5rem; }
+.progress-row .n { font: 500 var(--t-support)/1.4 var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; letter-spacing: .03em; }
+.progress-row .n.label { min-width: 8rem; }
 </style>

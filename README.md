@@ -93,7 +93,11 @@ Wrap everything in `<rr-doc title="…">`. Props are attributes; children go bet
 | `rr-legend` / `rr-key` | — / `kind` | State legend (`new lit dim green amber`) |
 | `rr-slider` | `id`, `label`, `min`, `max`, `value`, `step=1`, `unit=` | Range input with live readout |
 | `rr-code` | `file`, `lang`, `start=1`, `collapsed` (flag), `id=` | Annotatable code exhibit — see below |
+| `rr-recall` / `rr-flashcard` | `id`, `title=Recall` / `q`, `a` | Flip-card retrieval check — see below |
 | `rr-quiz` / `rr-question` / `rr-choice` / `rr-why` | `id`, `title=Self-check` / `q` / `correct=` / — | Self-check quiz — see below |
+| `rr-stack` / `rr-frame` | `label=Calls` / `fn`, `file=`, `note=`, `tone=` | Call-stack tree — see below |
+| `rr-types` / `rr-sig` | `label=Shapes` / `name`, `note=`, `tone=` | Function shapes (inputs → outputs) — see below |
+| `rr-deck` / `rr-slide` / `rr-beat` / `rr-step` | `id=deck` / `kicker=`, `title=`, `spine=` / `mark=` / `wp=` | Stepped reader-paced deck — see below |
 
 ### Code exhibits (`rr-code`)
 
@@ -107,6 +111,18 @@ async function renewLease(lease: Lease) {
   ...
 }
 </rr-code>
+```
+
+### Recall (`rr-recall`) — prefer this over a quiz
+
+The retrieval-first check: a flip card asks (`q`) before it tells (`a`), and the child is an optional deeper note shown with the answer. The reader answers in their head, flips, then self-marks **Got it / Missed it**; **Copy missed** exports the cards they missed as agent-ready text. Because the reader commits before seeing the answer, recall beats multiple choice for making things stick — reach for `rr-recall` first, and keep `rr-quiz` for decisions that carry genuinely plausible wrong turns. Best as 2–4 cards at the close of a section.
+
+```html
+<rr-recall id="lease-recall" title="Lease keeper recall">
+  <rr-flashcard q="What forces a zombie machine off?" a="Lease expiry after a missed TTL.">
+    The reclaim is tied to the lease itself — nothing else needs to notice a crashed run.
+  </rr-flashcard>
+</rr-recall>
 ```
 
 ### Quizzes (`rr-quiz`)
@@ -123,11 +139,35 @@ Mark the correct `rr-choice` with `correct="1"` and always include an `rr-why` e
 </rr-quiz>
 ```
 
+### Structure exhibits (`rr-stack`, `rr-types`)
+
+The two views that let a reader judge the abstractions without reading body code: **who calls whom** and **what flows in and out**. `rr-stack` renders a call tree — nest `rr-frame` inside `rr-frame`; `fn` is the function, `file` its home, `note` a plain-words aside. `rr-types` lists function shapes — `rr-sig name="renewLease"` with the signature as the child, written as `(input: Shape) → Outcome` (escape `<` as `&lt;` in generics). Pair a before and after in `rr-panes` and tone the changes — `new` (accent) on added, `gone` (struck) on removed, `amber` on changed — so a deepening stack or a widening signature is visible at a glance.
+
+```html
+<rr-stack label="Calls">
+  <rr-frame fn="handleRequest" file="server.ts">
+    <rr-frame fn="renewLease" file="keeper.ts" tone="new" note="validation extracted"/>
+  </rr-frame>
+</rr-stack>
+```
+
+### Decks (`rr-deck`)
+
+A reader-paced slide format. Put one `rr-deck` directly inside `rr-doc` (no `rr-toc`, no `rr-section`); `rr-slide`s hold the content. The left **spine** is the map — one tick per slide (labelled by `spine=`), subdividing into one dash per step on the current slide — and the HUD gives ←/→, a per-slide progress bar, and a **read as document** toggle that flattens the same source into a scrollable page.
+
+Chunk *inside* a slide and reveal one unit per forward keypress. Two flavors: `rr-step` is a ghost waypoint whose coordinate (`wp="WP 1 · Parse"`) shows from the start while its body stays hidden with space reserved, so revealing it never reflows the slide — use it when the order of arrival is the lesson. `rr-beat` is a teaching chunk that is fully hidden until revealed, then recedes to context once a later beat lands; `mark="<element-id>"` lights something already on the board. Every state is a deep link, so a reader who walked in late can rewind. See [`demo/demo-deck.rr.html`](demo/demo-deck.rr.html).
+
 ### Conventions
 
-- One accent color; amber = open decision/risk, green = done, red = hard failure only. No gradients, no display fonts.
-- Give every jargon term an `rr-term`. Code appears as deliberate `rr-code` exhibits (collapsed by default), never as walls of snippets in prose.
-- Calm motion: nothing autoplays; movement is feedback to the reader's interaction only.
+This is **Traverse**, a cartographic design system: a chart-paper light theme (`#f4f5f3`) and a night-navigation dark theme (`#1b2023`), one survey-blue accent (`--accent #2456d6`), Avenir Next for the reading voice and SF Mono for the instrument voice (numbers, labels, coordinates). Two type laws hold every block together:
+
+- **Law 01 — the descending column.** The first line of any column or card is the largest; sizes only decrease downward. A kind-label rides the title line (right-aligned mono) or sits in the footer — never a small kicker stacked *above* a bigger line.
+- **Law 02 — the floor.** No content text below 16px and no chrome below 13px. The scale is display 34 / section 26 / sub 19 / body 18 / support 16 / chrome 13.
+
+- 4px radius, 1px hairlines, and **zero box-shadows** — separation is line and contrast, never a drop shadow. One accent; amber = open decision/risk, green = done, red = hard failure only. No gradients, no display fonts.
+- Give every jargon term an `rr-term`; it lights the **legend panel** (a fixed card on wide screens, an inline expansion on narrow ones), not a tooltip. Code appears as deliberate `rr-code` exhibits (collapsed by default), never as walls of snippets in prose.
+- **Retrieval over recognition:** close a section with `rr-recall` flip cards by default, and keep `rr-quiz` for real decision forks.
+- Calm motion: nothing autoplays; movement is feedback to the reader's interaction only, and a survey-blue outline marks `:focus-visible`.
 - Interactive mini-worlds live in `rr-stage`, never the prose column — that is the one place to write custom inline JS/SVG.
 
 ## How it works

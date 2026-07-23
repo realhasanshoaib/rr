@@ -1,4 +1,5 @@
-<!-- Cards, stat tiles, two-column layout. -->
+<!-- Cards, stat tiles, two-column layout. Tiles obey the descending column:
+     the value is the first and largest line; the kind-label rides below it. -->
 
 <template name="card">
 <div class="card">
@@ -13,9 +14,9 @@
 </template>
 
 <template name="tile" props="icon label value caption tone=">
-<div class="card">
-  <p class="kicker"><rr-icon name="{icon}"/> {label}</p>
-  <b class="{tone}">{value}</b>
+<div class="card tile">
+  <div class="tile-v {tone}">{value}</div>
+  <div class="tile-l"><rr-icon name="{icon}"/> {label}</div>
   <span class="caption">{caption}</span>
 </div>
 </template>
@@ -27,13 +28,18 @@
 </template>
 
 <style>
-.card { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 1rem 1.25rem; margin: 1rem 0; }
-.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: .75rem; margin: 1rem 0; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: var(--s2) var(--s3); margin: var(--s2) 0; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: var(--s2); margin: var(--s2) 0; }
 .tiles .card { margin: 0; }
-.tiles .card b { font-size: 1.35rem; font-weight: 600; display: block; font-variant-numeric: tabular-nums; }
-.tiles .card b.amber { color: var(--amber); }
-.tiles .card b.green { color: var(--green); }
-.tiles .card b.red { color: var(--red); }
-.cols2 { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+.tile { display: flex; flex-direction: column; }
+.tile-v { font: 600 26px/1.15 var(--mono); letter-spacing: -.01em; font-variant-numeric: tabular-nums; }
+.tile-v.accent { color: var(--accent); }
+.tile-v.amber { color: var(--amber); }
+.tile-v.green { color: var(--green); }
+.tile-v.red { color: var(--red); }
+.tile-l { font: 500 var(--t-support)/1.4 var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--muted); margin-top: 6px; }
+.tile-l .icon { width: 1em; height: 1em; }
+.tile .caption { margin-top: 2px; }
+.cols2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s2); }
 @media (max-width: 640px) { .cols2 { grid-template-columns: 1fr; } }
 </style>

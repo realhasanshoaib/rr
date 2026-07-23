@@ -55,31 +55,32 @@
 <style>
 .fullbleed {
   grid-column: 1 / -1; width: 100%; min-height: 100dvh;
-  padding: 2.5rem clamp(1rem, 3vw, 3rem) 3rem;
-  background: var(--card);
-  background-image: radial-gradient(color-mix(in srgb, var(--muted) 20%, transparent) 1px, transparent 1px);
+  padding: var(--s5) clamp(var(--s2), 3vw, var(--s4)) var(--s6);
+  background: var(--surface);
+  background-image: radial-gradient(color-mix(in srgb, var(--muted) 18%, transparent) 1px, transparent 1px);
   background-size: 24px 24px;
   border-block: 1px solid var(--line);
 }
 :fullscreen { background: var(--bg); overflow-y: auto; }
-.stage-head { display: flex; align-items: center; gap: .75rem 1.25rem; flex-wrap: wrap; max-width: 1080px; margin: 0 auto 1.5rem; }
-.stage-head .crumb { font-size: .85rem; color: var(--muted); }
+.stage-head { display: flex; align-items: center; gap: var(--s1) var(--s3); flex-wrap: wrap; max-width: 1080px; margin: 0 auto var(--s3); }
+.stage-head .crumb { font: 500 var(--t-chrome)/1.4 var(--mono); letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
 .stage-head .crumb b { color: var(--fg); font-weight: 600; }
 .stage-head .spacer { flex: 1; }
 .stage-body { max-width: 1080px; margin: 0 auto; }
-.stage-band { border: 1px dashed color-mix(in srgb, var(--muted) 35%, transparent); border-radius: 14px; padding: 1.9rem 1.25rem 1.1rem; position: relative; margin: 1rem 0; }
-.stage-band > .band-label { position: absolute; top: -.7rem; left: 1rem; background: var(--card); padding: 0 .5rem; font-size: .75rem; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
-.stage-band .blocks { display: flex; gap: .9rem; flex-wrap: wrap; }
-.block { background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: .7rem 1rem; font-size: .9rem; min-width: 10rem; }
+.stage-band { border: 1px dashed color-mix(in srgb, var(--muted) 35%, transparent); border-radius: var(--radius); padding: var(--s4) var(--s3) var(--s3); position: relative; margin: var(--s2) 0; }
+.stage-band > .band-label { position: absolute; top: -.7rem; left: var(--s2); background: var(--surface); padding: 0 var(--s1); font: 500 var(--t-chrome)/1.4 var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+.stage-band .blocks { display: flex; gap: var(--s2); flex-wrap: wrap; }
+.block { background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius); padding: var(--s2) var(--s3); font-size: var(--t-support); min-width: 10rem; }
+.block b { font-weight: 600; }
 .block .caption { display: block; }
-.block.is-new { border-color: var(--accent); box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 30%, transparent); }
+.block.is-new { border-color: var(--accent); }
 .block.is-new .caption { color: var(--accent); }
-.readout { display: flex; gap: 1.25rem; flex-wrap: wrap; margin-top: 1.25rem; font-size: .82rem; color: var(--muted); }
+.readout { display: flex; gap: var(--s3); flex-wrap: wrap; margin-top: var(--s3); font: 500 var(--t-support)/1.4 var(--mono); color: var(--muted); }
 .readout b { color: var(--fg); font-variant-numeric: tabular-nums; }
 .readout b.hot { color: var(--red); }
-.legend { display: flex; gap: 1rem; font-size: .78rem; color: var(--muted); align-items: center; flex-wrap: wrap; }
-.legend i { display: inline-block; width: .7rem; height: .7rem; border-radius: 3px; margin-right: .3rem; vertical-align: -1px; border: 1px solid var(--line); background: var(--bg); }
-.legend .k-new i { border-color: var(--accent); box-shadow: 0 0 6px color-mix(in srgb, var(--accent) 45%, transparent); }
+.legend { display: flex; gap: var(--s2); font: 500 var(--t-support)/1.4 var(--mono); color: var(--muted); align-items: center; flex-wrap: wrap; }
+.legend i { display: inline-block; width: .7rem; height: .7rem; border-radius: 2px; margin-right: .3rem; vertical-align: -1px; border: 1px solid var(--line); background: var(--bg); }
+.legend .k-new i { border-color: var(--accent); }
 .legend .k-lit i { background: color-mix(in srgb, var(--accent) 14%, var(--bg)); border-color: color-mix(in srgb, var(--accent) 40%, var(--line)); }
 .legend .k-dim i { opacity: .35; }
 .legend .k-green i { background: var(--green); border-color: var(--green); }
