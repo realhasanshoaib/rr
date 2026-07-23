@@ -1,0 +1,41 @@
+<!-- Checklist card and glossary grid. -->
+
+<template name="checklist" props="label">
+<div class="card">
+  <p class="kicker">{label}</p>
+  <ul class="checklist">
+    <slot/>
+  </ul>
+</div>
+</template>
+
+<template name="done">
+<li class="done"><rr-icon name="check"/> <slot/></li>
+</template>
+
+<template name="todo">
+<li class="todo"><span class="cbox"></span> <slot/></li>
+</template>
+
+<template name="glossary">
+<dl class="glossary">
+  <slot/>
+</dl>
+</template>
+
+<template name="def" props="term">
+<dt>{term}</dt><dd><slot/></dd>
+</template>
+
+<style>
+ul.checklist { list-style: none; padding: 0; margin: .25rem 0; }
+ul.checklist li { display: flex; gap: .6rem; align-items: baseline; padding: .3rem 0; }
+ul.checklist li .icon { flex: none; vertical-align: -.15em; }
+ul.checklist li.done .icon { color: var(--green); }
+ul.checklist li.todo .cbox { flex: none; width: .95em; height: .95em; border: 1.5px solid var(--muted); border-radius: 4px; align-self: center; }
+ul.checklist li.todo { color: var(--muted); }
+dl.glossary { display: grid; grid-template-columns: max-content 1fr; gap: .4rem 1.5rem; margin: 1rem 0; }
+dl.glossary dt { font-weight: 600; font-size: .95rem; }
+dl.glossary dd { margin: 0; font-size: .95rem; }
+@media (max-width: 520px) { dl.glossary { grid-template-columns: 1fr; } dl.glossary dd { margin-bottom: .5rem; } }
+</style>

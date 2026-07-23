@@ -1,0 +1,81 @@
+<rr-doc title="rr — a build system for composable HTML documents">
+
+<rr-toc>
+  <rr-toc-link href="#start" label="Quickstart"/>
+  <rr-toc-link href="#example" label="Example"/>
+  <rr-toc-link href="#components" label="Components"/>
+  <rr-toc-link href="#install" label="Install"/>
+  <rr-toc-link href="https://github.com/hhushhas/rr" label="GitHub ↗"/>
+</rr-toc>
+
+<rr-header kicker="Composable HTML · zero dependencies" title="rr" icon="doc">
+  <p>A build system for composable HTML documents. Write a small <code>.rr.html</code> of <code>&lt;rr-*&gt;</code> tags; <code>rr build</code> expands them into one polished, self-contained HTML file — canonical CSS, a tree-shaken icon sprite, and both themes — that opens straight from disk with no dependencies and no network.</p>
+  <pre><code>npm install -g rr-cli</code></pre>
+</rr-header>
+
+<rr-section id="start" title="Quickstart" icon="bolt">
+  <rr-tiles>
+    <rr-tile icon="doc" label="Input" value=".rr.html" caption="a few component tags"/>
+    <rr-tile icon="check" label="Output" value="one .html" caption="self-contained"/>
+    <rr-tile icon="puzzle" label="Deps" value="0" caption="pure Node"/>
+  </rr-tiles>
+  <pre><code>rr init report          # scaffolds report.rr.html
+rr build report.rr.html # emits report.html beside it</code></pre>
+  <rr-callout><b>This page is the demo.</b> It was authored as a <code>.rr.html</code> file and built with <code>rr</code> itself — the same components documented below.</rr-callout>
+</rr-section>
+
+<rr-section id="example" title="What you write vs. what you get" icon="branch">
+  <rr-panes>
+    <rr-before label="report.rr.html"><pre style="margin:0"><code>&lt;rr-section title="TL;DR"&gt;
+  &lt;rr-tiles&gt;
+    &lt;rr-tile label="Shipped"
+      value="3" icon="check"/&gt;
+  &lt;/rr-tiles&gt;
+  &lt;rr-callout tone="amber"&gt;
+    Open decision.
+  &lt;/rr-callout&gt;
+&lt;/rr-section&gt;</code></pre></rr-before>
+    <rr-after label="report.html"><p style="margin:0 0 .6rem">A styled section with a stat tile and an amber callout — CSS and icons inlined, nothing external.</p>
+      <rr-tiles>
+        <rr-tile label="Shipped" value="3" icon="check" caption="this week"/>
+      </rr-tiles>
+      <rr-callout tone="amber">Open decision.</rr-callout>
+    </rr-after>
+  </rr-panes>
+  <p>The build fails loudly on unknown components, missing props, and unknown icons — a composed document is correct by construction.</p>
+</rr-section>
+
+<rr-section id="components" title="The component library" icon="puzzle">
+  <p>Surfaces, status, flows, checklists, scorecards, and interactive mini-worlds — composed, not hand-written. A sampler:</p>
+  <rr-progress label="Rollout" pct="80" n="8/10 regions"/>
+  <rr-progress label="Coverage" pct="45" n="45/100 paths" tone="amber"/>
+  <rr-journey>
+    <rr-stop>Write .rr.html</rr-stop><rr-sep/><rr-stop tone="new">rr build</rr-stop><rr-sep/><rr-stop>Ship one file</rr-stop>
+  </rr-journey>
+  <rr-scorecard>
+    <rr-score-row promised="Zero runtime dependencies" delivered="Pure Node, no bundler" verdict="kept" tone="green"/>
+    <rr-score-row promised="One self-contained file" delivered="CSS, JS, icons all inlined" verdict="kept" tone="green"/>
+  </rr-scorecard>
+  <rr-checklist label="Every output ships">
+    <rr-done>Light and dark themes</rr-done>
+    <rr-done>Only the icons the document uses</rr-done>
+    <rr-done>Only the component CSS/JS in play</rr-done>
+  </rr-checklist>
+  <rr-glossary>
+    <rr-def term="Component"><code>&lt;rr-tile&gt;</code>, <code>&lt;rr-callout&gt;</code>, <code>&lt;rr-scorecard&gt;</code> — a tag you compose instead of styling from scratch.</rr-def>
+    <rr-def term="Tree-shaking">Unused CSS, scripts, and icons never reach the output.</rr-def>
+  </rr-glossary>
+  <p class="caption">Full reference in the <a href="https://github.com/hhushhas/rr#components">README</a>.</p>
+</rr-section>
+
+<rr-section id="install" title="Install" icon="gear">
+  <rr-cols2>
+    <rr-card><p class="kicker">npm</p><pre style="margin:0"><code>npm install -g rr-cli</code></pre></rr-card>
+    <rr-card><p class="kicker">Homebrew · macOS</p><pre style="margin:0"><code>brew install \
+  hhushhas/tap/rr</code></pre></rr-card>
+  </rr-cols2>
+  <rr-card><p class="kicker">Scoop · Windows</p><pre style="margin:0"><code>scoop install https://raw.githubusercontent.com/hhushhas/rr/main/scoop/rr.json</code></pre></rr-card>
+  <p><a href="https://github.com/hhushhas/rr">GitHub</a> · <a href="https://www.npmjs.com/package/rr-cli">npm</a> · MIT licensed</p>
+</rr-section>
+
+</rr-doc>

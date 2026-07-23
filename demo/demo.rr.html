@@ -1,0 +1,74 @@
+<rr-doc title="rr demo — lease keeper spec companion">
+
+<rr-toc>
+  <rr-toc-link href="#tldr" label="TL;DR"/>
+  <rr-toc-link href="#scope" label="Scope"/>
+  <rr-toc-link href="#flow" label="Flow"/>
+  <rr-toc-link href="#world" label="Mini world"/>
+  <rr-toc-link href="#reckoning" label="Reckoning"/>
+</rr-toc>
+
+<rr-header kicker="Spec companion · demo" title="Lease keeper" icon="clock">
+  <p>Every cloud machine now runs under a <rr-term def="A time-limited permit to keep one cloud machine running.">lease</rr-term>. No heartbeat, no machine — worst-case zombie cost is one TTL.</p>
+</rr-header>
+
+<rr-section id="tldr" title="TL;DR" icon="bolt">
+  <rr-tiles>
+    <rr-tile icon="users" label="Agents" value="7" caption="running nightly"/>
+    <rr-tile icon="clock" label="P95 latency" value="412 ms" caption="was 1.9 s"/>
+    <rr-tile icon="warning" label="Open risks" value="2" caption="both scoped" tone="amber"/>
+  </rr-tiles>
+  <rr-callout tone="amber"><b>Open decision.</b> Lease TTL: 5 min vs 15 min.</rr-callout>
+  <rr-progress label="Rollout" pct="80" n="8/10 regions"/>
+  <rr-progress label="Coverage" pct="45" n="45/100 paths" tone="amber"/>
+</rr-section>
+
+<rr-section id="scope" title="Scope" icon="shield">
+  <rr-cols2>
+    <rr-card><p class="kicker" style="color:var(--green)">✅ In scope</p><ul style="margin:0;padding-left:1.2rem"><li>Lease issue, renew, expire</li></ul></rr-card>
+    <rr-card><p class="kicker" style="color:var(--red)">🚫 Not in scope</p><ul style="margin:0;padding-left:1.2rem"><li>Multi-region failover</li></ul></rr-card>
+  </rr-cols2>
+  <rr-checklist label="Launch checklist">
+    <rr-done>Shadow mode ran 7 days clean</rr-done>
+    <rr-todo>Runbook reviewed by on-call</rr-todo>
+  </rr-checklist>
+  <rr-glossary>
+    <rr-def term="Lease">A time-limited permit to keep one machine running.</rr-def>
+    <rr-def term="Zombie">A machine still billing after its work ended.</rr-def>
+  </rr-glossary>
+</rr-section>
+
+<rr-section id="flow" title="What changes" icon="branch">
+  <rr-journey>
+    <rr-stop>Join call</rr-stop><rr-sep/><rr-stop tone="new">Lease keeper</rr-stop><rr-sep/><rr-stop>Ledger</rr-stop>
+  </rr-journey>
+  <rr-panes>
+    <rr-before><p style="margin:0">Engine grabbed machines directly; crashed runs billed for weeks.</p></rr-before>
+    <rr-after><p style="margin:0">Every machine runs under a lease with forced reclaim.</p></rr-after>
+  </rr-panes>
+  <rr-phases>
+    <rr-phase state="done" label="Spec" caption="signed off"/>
+    <rr-phase state="now" label="Shadow" caption="day 4 of 7"/>
+    <rr-phase label="Cutover" caption="gated on shadow"/>
+  </rr-phases>
+</rr-section>
+
+<rr-stage id="world" crumb="Lease world · what runs where">
+  <rr-legend>
+    <rr-key kind="new">new piece</rr-key>
+    <rr-key kind="dim">unchanged</rr-key>
+  </rr-legend>
+</rr-stage>
+
+<rr-section id="reckoning" title="Promised vs delivered" icon="check">
+  <rr-scorecard>
+    <rr-score-row promised="Leases expire within one TTL" delivered="Median 40 s" verdict="kept" tone="green"/>
+    <rr-score-row promised="5-minute TTL" delivered="Shipped 15 min — renewal storms" verdict="changed" tone="amber"/>
+  </rr-scorecard>
+  <rr-slider id="ttl" label="TTL (min)" min="1" max="30" value="15" unit=" min"/>
+  <rr-details summary="Trace appendix (not for reading)">
+    <pre><code>keeper/lease.ts:42</code></pre>
+  </rr-details>
+</rr-section>
+
+</rr-doc>

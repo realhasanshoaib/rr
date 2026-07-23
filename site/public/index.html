@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>rr — a build system for composable HTML documents</title>
+<meta name="description" content="Compose <rr-*> components into one self-contained, themed HTML file. Zero-dependency Node CLI.">
+<link rel="canonical" href="https://rr.hasanshoaib.com/">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.png" sizes="512x512" type="image/png">
+<meta property="og:type" content="website">
+<meta property="og:title" content="rr — a build system for composable HTML documents">
+<meta property="og:description" content="Compose <rr-*> components into one self-contained, themed HTML file. Zero-dependency Node CLI.">
+<meta property="og:url" content="https://rr.hasanshoaib.com/">
+<meta property="og:image" content="https://rr.hasanshoaib.com/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="rr — a build system for composable HTML documents">
+<meta name="twitter:description" content="Compose <rr-*> components into one self-contained, themed HTML file. Zero-dependency Node CLI.">
+<meta name="twitter:image" content="https://rr.hasanshoaib.com/og.png">
+<style>
+:root {
+  --bg: #faf9f7; --fg: #37352f; --muted: #9b9a97; --line: #e8e6e1;
+  --card: #f3f1ec; --accent: #2383e2; --amber: #d9730d; --green: #448361; --red: #d44c47;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #191919; --fg: #e3e2e0; --muted: #9b9b9b; --line: #2f2f2f;
+    --card: #232323; --accent: #529cca; --amber: #cb7b37; --green: #4f9768; --red: #de5550;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); margin: 0; -webkit-font-smoothing: antialiased;
+  font: 16px/1.65 ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+}
+main { display: grid; grid-template-columns: 1fr min(720px, calc(100% - 3rem)) 1fr; padding: 3rem 0 6rem; row-gap: .25rem; }
+main > * { grid-column: 2; min-width: 0; }
+.wide { grid-column: 1 / -1; width: min(1080px, calc(100% - 3rem)); justify-self: center; }
+h1 { font-size: 1.75rem; font-weight: 600; line-height: 1.3; margin: 0 0 .5rem; }
+h2 { font-size: 1.25rem; font-weight: 600; border-bottom: 1px solid var(--line); padding-bottom: .3rem; margin: 3rem 0 1rem; }
+h3 { font-size: 1rem; font-weight: 600; margin: 2rem 0 .5rem; }
+a { color: var(--accent); text-decoration: none; } a:hover { text-decoration: underline; }
+.kicker { color: var(--muted); font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; margin: 0 0 .25rem; }
+.caption { color: var(--muted); font-size: .85rem; }
+.icon { width: 1.1em; height: 1.1em; vertical-align: -.18em; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+img { max-width: 100%; border-radius: 8px; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+nav.toc {
+  position: sticky; top: 0; z-index: 20; grid-column: 1 / -1; width: 100%;
+  background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--line); padding: .5rem 1.5rem;
+  display: flex; gap: .35rem 1rem; flex-wrap: wrap; font-size: .85rem;
+}
+nav.toc a { color: var(--muted); } nav.toc a:hover { color: var(--accent); text-decoration: none; }
+section[id] { scroll-margin-top: 5rem; }
+table { border-collapse: collapse; width: 100%; font-size: .95rem; margin: 1rem 0; }
+th, td { border-bottom: 1px solid var(--line); padding: .5rem .75rem; text-align: left; vertical-align: top; }
+th { color: var(--muted); font-weight: 500; font-size: .8rem; text-transform: uppercase; letter-spacing: .03em; }
+code, pre, kbd { font: .875rem/1.6 ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+code { background: var(--card); border-radius: 4px; padding: .1rem .35rem; }
+pre { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 1rem; overflow-x: auto; }
+pre code { background: none; padding: 0; }
+.hl { background: color-mix(in srgb, var(--accent) 14%, transparent); display: inline-block; width: 100%; }
+.term { position: relative; border-bottom: 1px dotted var(--muted); cursor: help; }
+.term:hover::after, .term:focus::after {
+  content: attr(data-def); position: absolute; left: 0; top: calc(100% + 4px); z-index: 10;
+  width: max-content; max-width: 320px; padding: .5rem .75rem; font-size: .85rem; line-height: 1.4;
+  background: var(--card); color: var(--fg); border: 1px solid var(--line); border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,.15);
+}
+details { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: .5rem 1rem; margin: 1rem 0; }
+summary { cursor: pointer; color: var(--muted); font-size: .9rem; }
+details[open] summary { margin-bottom: .5rem; }
+details.src summary { font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; }
+details.src pre { background: var(--bg); margin: .25rem 0 .5rem; }
+button { font: inherit; color: var(--fg); background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: .35rem .9rem; cursor: pointer; }
+button:hover { border-color: var(--muted); }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+button[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--card)); }
+button:disabled { opacity: .45; cursor: not-allowed; }
+button:disabled:hover { border-color: var(--line); }
+button.iconbtn { padding: .35rem .5rem; line-height: 1; }
+input, select { font: inherit; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: .35rem .6rem; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.journey { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; margin: 1rem 0; }
+.journey .stop { border: 1px solid var(--line); background: var(--card); border-radius: 999px; padding: .25rem .8rem; font-size: .85rem; white-space: nowrap; }
+.journey .stop.new { color: var(--accent); border-color: var(--accent); box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 30%, transparent); }
+.journey .sep { color: var(--muted); flex: none; }
+.panes { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; margin: 1rem 0; }
+@media (max-width: 640px) { .panes { grid-template-columns: 1fr; } }
+.pane { border: 1px solid var(--line); border-radius: 8px; padding: .9rem 1.1rem; }
+.pane .kicker { margin-bottom: .5rem; }
+.pane.before { border-style: dashed; }
+.pane.before .kicker { color: var(--muted); }
+.pane.after { border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); }
+.pane.after .kicker { color: var(--accent); }
+ol.phases { display: flex; list-style: none; padding: 0; margin: 1.25rem 0; gap: .5rem; }
+ol.phases li { flex: 1; position: relative; padding-top: 1.35rem; font-size: .85rem; color: var(--muted); min-width: 0; }
+ol.phases li::before {
+  content: ""; position: absolute; top: 0; left: 0; width: .8rem; height: .8rem;
+  border-radius: 50%; border: 2px solid var(--line); background: var(--bg);
+}
+ol.phases li::after {
+  content: ""; position: absolute; top: .45rem; left: 1.3rem; right: .1rem; height: 1px; background: var(--line);
+}
+ol.phases li:last-child::after { display: none; }
+ol.phases li.done::before { background: var(--green); border-color: var(--green); }
+ol.phases li.done::after { background: var(--green); }
+ol.phases li.now { color: var(--fg); font-weight: 600; }
+ol.phases li.now::before { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 25%, var(--bg)); }
+ol.phases li .caption { display: block; font-weight: 400; }
+
+ul.checklist { list-style: none; padding: 0; margin: .25rem 0; }
+ul.checklist li { display: flex; gap: .6rem; align-items: baseline; padding: .3rem 0; }
+ul.checklist li .icon { flex: none; vertical-align: -.15em; }
+ul.checklist li.done .icon { color: var(--green); }
+ul.checklist li.todo .cbox { flex: none; width: .95em; height: .95em; border: 1.5px solid var(--muted); border-radius: 4px; align-self: center; }
+ul.checklist li.todo { color: var(--muted); }
+dl.glossary { display: grid; grid-template-columns: max-content 1fr; gap: .4rem 1.5rem; margin: 1rem 0; }
+dl.glossary dt { font-weight: 600; font-size: .95rem; }
+dl.glossary dd { margin: 0; font-size: .95rem; }
+@media (max-width: 520px) { dl.glossary { grid-template-columns: 1fr; } dl.glossary dd { margin-bottom: .5rem; } }
+
+.scorecard { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; margin: 1rem 0; }
+.scorecard .row { display: grid; grid-template-columns: 1fr 1fr 6.5rem; gap: 1rem; padding: .6rem 1rem; border-bottom: 1px solid var(--line); font-size: .92rem; align-items: start; }
+.scorecard .row:last-child { border-bottom: none; }
+.scorecard .row.head { background: var(--card); padding-block: .45rem; }
+.scorecard .row.head span { color: var(--muted); font-size: .75rem; text-transform: uppercase; letter-spacing: .04em; }
+.scorecard .row .badge { justify-self: start; }
+@media (max-width: 640px) { .scorecard .row { grid-template-columns: 1fr; gap: .25rem; } }
+
+.badge {
+  display: inline-block; padding: .1rem .6rem; border-radius: 999px; font-size: .75rem;
+  border: 1px solid var(--line); color: var(--muted);
+}
+.badge.accent { color: var(--accent); border-color: var(--accent); }
+.badge.green  { color: var(--green);  border-color: var(--green); }
+.badge.amber  { color: var(--amber);  border-color: var(--amber); }
+.badge.red    { color: var(--red);    border-color: var(--red); }
+.callout { border: 1px solid var(--line); border-left: 3px solid var(--accent); background: var(--card); border-radius: 8px; padding: .75rem 1rem; margin: 1rem 0; }
+.callout.amber { border-left-color: var(--amber); }
+.callout.red   { border-left-color: var(--red); }
+.progress { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
+.progress > i { display: block; height: 100%; background: var(--green); }
+.progress > i.accent { background: var(--accent); }
+.progress > i.amber { background: var(--amber); }
+.progress > i.red { background: var(--red); }
+.progress-row { display: flex; align-items: center; gap: .75rem; margin: .5rem 0; }
+.progress-row .progress { flex: 1; }
+.progress-row .n { font-size: .82rem; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.progress-row .n.label { min-width: 7.5rem; }
+
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 1rem 1.25rem; margin: 1rem 0; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: .75rem; margin: 1rem 0; }
+.tiles .card { margin: 0; }
+.tiles .card b { font-size: 1.35rem; font-weight: 600; display: block; font-variant-numeric: tabular-nums; }
+.tiles .card b.amber { color: var(--amber); }
+.tiles .card b.green { color: var(--green); }
+.tiles .card b.red { color: var(--red); }
+.cols2 { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+@media (max-width: 640px) { .cols2 { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<svg style="display:none" aria-hidden="true">
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+  <symbol id="i-branch" viewBox="0 0 24 24"><path d="M6 3v12"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></symbol>
+  <symbol id="i-puzzle" viewBox="0 0 24 24"><path d="M5 8h3a2 2 0 1 1 4 0h3v3a2 2 0 1 1 0 4v3h-3a2 2 0 1 0-4 0H5z"/></symbol>
+  <symbol id="i-doc" viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M9 13h6M9 17h6"/></symbol>
+  <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2 3 14h7l-1 8 10-12h-7z"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3h.1a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9v.1a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
+</svg>
+<main>
+<nav class="toc" aria-label="Sections">
+  <a href="#start">Quickstart</a>
+  <a href="#example">Example</a>
+  <a href="#components">Components</a>
+  <a href="#install">Install</a>
+  <a href="https://github.com/hhushhas/rr">GitHub ↗</a>
+</nav>
+
+<header>
+  <p class="kicker">Composable HTML · zero dependencies</p>
+  <h1><svg class="icon"><use href="#i-doc"/></svg> rr</h1>
+  <p>A build system for composable HTML documents. Write a small <code>.rr.html</code> of <code>&lt;rr-*&gt;</code> tags; <code>rr build</code> expands them into one polished, self-contained HTML file — canonical CSS, a tree-shaken icon sprite, and both themes — that opens straight from disk with no dependencies and no network.</p>
+  <pre><code>npm install -g rr-cli</code></pre>
+</header>
+
+<section id="start">
+  <h2><svg class="icon"><use href="#i-bolt"/></svg> Quickstart</h2>
+  <div class="tiles">
+  <div class="card">
+  <p class="kicker"><svg class="icon"><use href="#i-doc"/></svg> Input</p>
+  <b class="">.rr.html</b>
+  <span class="caption">a few component tags</span>
+</div>
+    <div class="card">
+  <p class="kicker"><svg class="icon"><use href="#i-check"/></svg> Output</p>
+  <b class="">one .html</b>
+  <span class="caption">self-contained</span>
+</div>
+    <div class="card">
+  <p class="kicker"><svg class="icon"><use href="#i-puzzle"/></svg> Deps</p>
+  <b class="">0</b>
+  <span class="caption">pure Node</span>
+</div>
+</div>
+  <pre><code>rr init report          # scaffolds report.rr.html
+rr build report.rr.html # emits report.html beside it</code></pre>
+  <div class="callout "><b>This page is the demo.</b> It was authored as a <code>.rr.html</code> file and built with <code>rr</code> itself — the same components documented below.</div>
+</section>
+
+<section id="example">
+  <h2><svg class="icon"><use href="#i-branch"/></svg> What you write vs. what you get</h2>
+  <div class="panes">
+  <div class="pane before">
+  <p class="kicker">report.rr.html</p>
+  <pre style="margin:0"><code>&lt;rr-section title="TL;DR"&gt;
+  &lt;rr-tiles&gt;
+    &lt;rr-tile label="Shipped"
+      value="3" icon="check"/&gt;
+  &lt;/rr-tiles&gt;
+  &lt;rr-callout tone="amber"&gt;
+    Open decision.
+  &lt;/rr-callout&gt;
+&lt;/rr-section&gt;</code></pre>
+</div>
+    <div class="pane after">
+  <p class="kicker">report.html</p>
+  <p style="margin:0 0 .6rem">A styled section with a stat tile and an amber callout — CSS and icons inlined, nothing external.</p>
+      <div class="tiles">
+  <div class="card">
+  <p class="kicker"><svg class="icon"><use href="#i-check"/></svg> Shipped</p>
+  <b class="">3</b>
+  <span class="caption">this week</span>
+</div>
+</div>
+      <div class="callout amber">Open decision.</div>
+</div>
+</div>
+  <p>The build fails loudly on unknown components, missing props, and unknown icons — a composed document is correct by construction.</p>
+</section>
+
+<section id="components">
+  <h2><svg class="icon"><use href="#i-puzzle"/></svg> The component library</h2>
+  <p>Surfaces, status, flows, checklists, scorecards, and interactive mini-worlds — composed, not hand-written. A sampler:</p>
+  <div class="progress-row">
+  <span class="n label">Rollout</span>
+  <div class="progress"><i class="" style="width:80%"></i></div>
+  <span class="n">8/10 regions</span>
+</div>
+  <div class="progress-row">
+  <span class="n label">Coverage</span>
+  <div class="progress"><i class="amber" style="width:45%"></i></div>
+  <span class="n">45/100 paths</span>
+</div>
+  <div class="journey">
+  <span class="stop ">Write .rr.html</span><span class="sep"><svg class="icon"><use href="#i-arrow-right"/></svg></span><span class="stop new">rr build</span><span class="sep"><svg class="icon"><use href="#i-arrow-right"/></svg></span><span class="stop ">Ship one file</span>
+</div>
+  <div class="scorecard">
+  <div class="row head"><span>Promised (spec)</span><span>Delivered (debrief)</span><span>Verdict</span></div>
+  <div class="row"><span>Zero runtime dependencies</span><span>Pure Node, no bundler</span><span class="badge green">kept</span></div>
+    <div class="row"><span>One self-contained file</span><span>CSS, JS, icons all inlined</span><span class="badge green">kept</span></div>
+</div>
+  <div class="card">
+  <p class="kicker">Every output ships</p>
+  <ul class="checklist">
+    <li class="done"><svg class="icon"><use href="#i-check"/></svg> Light and dark themes</li>
+    <li class="done"><svg class="icon"><use href="#i-check"/></svg> Only the icons the document uses</li>
+    <li class="done"><svg class="icon"><use href="#i-check"/></svg> Only the component CSS/JS in play</li>
+  </ul>
+</div>
+  <dl class="glossary">
+  <dt>Component</dt><dd><code>&lt;rr-tile&gt;</code>, <code>&lt;rr-callout&gt;</code>, <code>&lt;rr-scorecard&gt;</code> — a tag you compose instead of styling from scratch.</dd>
+    <dt>Tree-shaking</dt><dd>Unused CSS, scripts, and icons never reach the output.</dd>
+</dl>
+  <p class="caption">Full reference in the <a href="https://github.com/hhushhas/rr#components">README</a>.</p>
+</section>
+
+<section id="install">
+  <h2><svg class="icon"><use href="#i-gear"/></svg> Install</h2>
+  <div class="cols2">
+  <div class="card">
+  <p class="kicker">npm</p><pre style="margin:0"><code>npm install -g rr-cli</code></pre>
+</div>
+    <div class="card">
+  <p class="kicker">Homebrew · macOS</p><pre style="margin:0"><code>brew install \
+  hhushhas/tap/rr</code></pre>
+</div>
+</div>
+  <div class="card">
+  <p class="kicker">Scoop · Windows</p><pre style="margin:0"><code>scoop install https://raw.githubusercontent.com/hhushhas/rr/main/scoop/rr.json</code></pre>
+</div>
+  <p><a href="https://github.com/hhushhas/rr">GitHub</a> · <a href="https://www.npmjs.com/package/rr-cli">npm</a> · MIT licensed</p>
+</section>
+</main>
+<script>
+document.querySelectorAll("[data-fullscreen]").forEach((b) =>
+  b.addEventListener("click", () =>
+    document.fullscreenElement
+      ? document.exitFullscreen()
+      : document.querySelector(b.dataset.fullscreen).requestFullscreen()));
+
+document.querySelectorAll("[data-toggle-pressed]").forEach((b) =>
+  b.addEventListener("click", () =>
+    b.setAttribute("aria-pressed", String(b.getAttribute("aria-pressed") !== "true"))));
+</script>
+</body>
+</html>

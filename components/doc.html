@@ -1,0 +1,141 @@
+<!-- Document shell, sections, icons, terms, collapsibles — always included. -->
+
+<template name="doc" props="title lang=en">
+<!doctype html>
+<html lang="{lang}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{title}</title>
+@@STYLES@@
+</head>
+<body>
+@@SPRITE@@
+<main>
+<slot/>
+</main>
+@@SCRIPTS@@
+</body>
+</html>
+</template>
+
+<template name="header" props="kicker title icon=doc">
+<header>
+  <p class="kicker">{kicker}</p>
+  <h1><rr-icon name="{icon}"/> {title}</h1>
+  <slot/>
+</header>
+</template>
+
+<template name="toc">
+<nav class="toc" aria-label="Sections">
+  <slot/>
+</nav>
+</template>
+
+<template name="toc-link" props="href label">
+<a href="{href}">{label}</a>
+</template>
+
+<template name="section" props="id title icon">
+<section id="{id}">
+  <h2><rr-icon name="{icon}"/> {title}</h2>
+  <slot/>
+</section>
+</template>
+
+<template name="icon" props="name">
+<svg class="icon"><use href="#i-{name}"/></svg>
+</template>
+
+<template name="term" props="def">
+<span class="term" tabindex="0" data-def="{def}"><slot/></span>
+</template>
+
+<template name="details" props="summary">
+<details>
+  <summary>{summary}</summary>
+  <slot/>
+</details>
+</template>
+
+<style>
+:root {
+  --bg: #faf9f7; --fg: #37352f; --muted: #9b9a97; --line: #e8e6e1;
+  --card: #f3f1ec; --accent: #2383e2; --amber: #d9730d; --green: #448361; --red: #d44c47;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #191919; --fg: #e3e2e0; --muted: #9b9b9b; --line: #2f2f2f;
+    --card: #232323; --accent: #529cca; --amber: #cb7b37; --green: #4f9768; --red: #de5550;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); margin: 0; -webkit-font-smoothing: antialiased;
+  font: 16px/1.65 ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+}
+main { display: grid; grid-template-columns: 1fr min(720px, calc(100% - 3rem)) 1fr; padding: 3rem 0 6rem; row-gap: .25rem; }
+main > * { grid-column: 2; min-width: 0; }
+.wide { grid-column: 1 / -1; width: min(1080px, calc(100% - 3rem)); justify-self: center; }
+h1 { font-size: 1.75rem; font-weight: 600; line-height: 1.3; margin: 0 0 .5rem; }
+h2 { font-size: 1.25rem; font-weight: 600; border-bottom: 1px solid var(--line); padding-bottom: .3rem; margin: 3rem 0 1rem; }
+h3 { font-size: 1rem; font-weight: 600; margin: 2rem 0 .5rem; }
+a { color: var(--accent); text-decoration: none; } a:hover { text-decoration: underline; }
+.kicker { color: var(--muted); font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; margin: 0 0 .25rem; }
+.caption { color: var(--muted); font-size: .85rem; }
+.icon { width: 1.1em; height: 1.1em; vertical-align: -.18em; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+img { max-width: 100%; border-radius: 8px; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+nav.toc {
+  position: sticky; top: 0; z-index: 20; grid-column: 1 / -1; width: 100%;
+  background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--line); padding: .5rem 1.5rem;
+  display: flex; gap: .35rem 1rem; flex-wrap: wrap; font-size: .85rem;
+}
+nav.toc a { color: var(--muted); } nav.toc a:hover { color: var(--accent); text-decoration: none; }
+section[id] { scroll-margin-top: 5rem; }
+table { border-collapse: collapse; width: 100%; font-size: .95rem; margin: 1rem 0; }
+th, td { border-bottom: 1px solid var(--line); padding: .5rem .75rem; text-align: left; vertical-align: top; }
+th { color: var(--muted); font-weight: 500; font-size: .8rem; text-transform: uppercase; letter-spacing: .03em; }
+code, pre, kbd { font: .875rem/1.6 ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+code { background: var(--card); border-radius: 4px; padding: .1rem .35rem; }
+pre { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 1rem; overflow-x: auto; }
+pre code { background: none; padding: 0; }
+.hl { background: color-mix(in srgb, var(--accent) 14%, transparent); display: inline-block; width: 100%; }
+.term { position: relative; border-bottom: 1px dotted var(--muted); cursor: help; }
+.term:hover::after, .term:focus::after {
+  content: attr(data-def); position: absolute; left: 0; top: calc(100% + 4px); z-index: 10;
+  width: max-content; max-width: 320px; padding: .5rem .75rem; font-size: .85rem; line-height: 1.4;
+  background: var(--card); color: var(--fg); border: 1px solid var(--line); border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,.15);
+}
+details { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: .5rem 1rem; margin: 1rem 0; }
+summary { cursor: pointer; color: var(--muted); font-size: .9rem; }
+details[open] summary { margin-bottom: .5rem; }
+details.src summary { font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; }
+details.src pre { background: var(--bg); margin: .25rem 0 .5rem; }
+button { font: inherit; color: var(--fg); background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: .35rem .9rem; cursor: pointer; }
+button:hover { border-color: var(--muted); }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+button[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--card)); }
+button:disabled { opacity: .45; cursor: not-allowed; }
+button:disabled:hover { border-color: var(--line); }
+button.iconbtn { padding: .35rem .5rem; line-height: 1; }
+input, select { font: inherit; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: .35rem .6rem; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+
+<script>
+document.querySelectorAll("[data-fullscreen]").forEach((b) =>
+  b.addEventListener("click", () =>
+    document.fullscreenElement
+      ? document.exitFullscreen()
+      : document.querySelector(b.dataset.fullscreen).requestFullscreen()));
+
+document.querySelectorAll("[data-toggle-pressed]").forEach((b) =>
+  b.addEventListener("click", () =>
+    b.setAttribute("aria-pressed", String(b.getAttribute("aria-pressed") !== "true"))));
+</script>

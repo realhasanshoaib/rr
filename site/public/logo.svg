@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="rr logo">
+  <rect x="6" y="6" width="52" height="52" rx="12" fill="none" stroke="#2383e2" stroke-width="4"/>
+  <rect x="16" y="17" width="32" height="8" rx="3" fill="#2383e2" opacity="0.35"/>
+  <rect x="16" y="30" width="32" height="8" rx="3" fill="#2383e2"/>
+  <rect x="16" y="43" width="20" height="8" rx="3" fill="#2383e2" opacity="0.35"/>
+</svg>

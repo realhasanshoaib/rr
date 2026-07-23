@@ -1,0 +1,87 @@
+<!-- Fullbleed stage for mini worlds: head row, legend, dashed bands, blocks, readout. -->
+
+<template name="stage" props="id crumb">
+<section id="{id}" class="fullbleed" role="group" aria-label="{crumb}">
+  <div class="stage-head">
+    <span class="crumb"><b>{crumb}</b></span>
+    <span class="spacer"></span>
+    <slot/>
+    <button type="button" data-fullscreen="#{id}"><rr-icon name="expand"/> Fullscreen</button>
+  </div>
+</section>
+</template>
+
+<template name="stage-body">
+<div class="stage-body">
+  <slot/>
+</div>
+</template>
+
+<template name="band" props="label">
+<div class="stage-band">
+  <span class="band-label">{label}</span>
+  <div class="blocks">
+    <slot/>
+  </div>
+</div>
+</template>
+
+<template name="block" props="icon title caption tone=">
+<div class="block {tone}">
+  <rr-icon name="{icon}"/> <b>{title}</b><span class="caption">{caption}</span>
+</div>
+</template>
+
+<template name="readout">
+<div class="readout">
+  <slot/>
+</div>
+</template>
+
+<template name="stat" props="label value tone=">
+<span>{label} <b class="{tone}">{value}</b></span>
+</template>
+
+<template name="legend">
+<div class="legend">
+  <slot/>
+</div>
+</template>
+
+<template name="key" props="kind">
+<span class="k-{kind}"><i></i><slot/></span>
+</template>
+
+<style>
+.fullbleed {
+  grid-column: 1 / -1; width: 100%; min-height: 100dvh;
+  padding: 2.5rem clamp(1rem, 3vw, 3rem) 3rem;
+  background: var(--card);
+  background-image: radial-gradient(color-mix(in srgb, var(--muted) 20%, transparent) 1px, transparent 1px);
+  background-size: 24px 24px;
+  border-block: 1px solid var(--line);
+}
+:fullscreen { background: var(--bg); overflow-y: auto; }
+.stage-head { display: flex; align-items: center; gap: .75rem 1.25rem; flex-wrap: wrap; max-width: 1080px; margin: 0 auto 1.5rem; }
+.stage-head .crumb { font-size: .85rem; color: var(--muted); }
+.stage-head .crumb b { color: var(--fg); font-weight: 600; }
+.stage-head .spacer { flex: 1; }
+.stage-body { max-width: 1080px; margin: 0 auto; }
+.stage-band { border: 1px dashed color-mix(in srgb, var(--muted) 35%, transparent); border-radius: 14px; padding: 1.9rem 1.25rem 1.1rem; position: relative; margin: 1rem 0; }
+.stage-band > .band-label { position: absolute; top: -.7rem; left: 1rem; background: var(--card); padding: 0 .5rem; font-size: .75rem; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+.stage-band .blocks { display: flex; gap: .9rem; flex-wrap: wrap; }
+.block { background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: .7rem 1rem; font-size: .9rem; min-width: 10rem; }
+.block .caption { display: block; }
+.block.is-new { border-color: var(--accent); box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 30%, transparent); }
+.block.is-new .caption { color: var(--accent); }
+.readout { display: flex; gap: 1.25rem; flex-wrap: wrap; margin-top: 1.25rem; font-size: .82rem; color: var(--muted); }
+.readout b { color: var(--fg); font-variant-numeric: tabular-nums; }
+.readout b.hot { color: var(--red); }
+.legend { display: flex; gap: 1rem; font-size: .78rem; color: var(--muted); align-items: center; flex-wrap: wrap; }
+.legend i { display: inline-block; width: .7rem; height: .7rem; border-radius: 3px; margin-right: .3rem; vertical-align: -1px; border: 1px solid var(--line); background: var(--bg); }
+.legend .k-new i { border-color: var(--accent); box-shadow: 0 0 6px color-mix(in srgb, var(--accent) 45%, transparent); }
+.legend .k-lit i { background: color-mix(in srgb, var(--accent) 14%, var(--bg)); border-color: color-mix(in srgb, var(--accent) 40%, var(--line)); }
+.legend .k-dim i { opacity: .35; }
+.legend .k-green i { background: var(--green); border-color: var(--green); }
+.legend .k-amber i { background: var(--amber); border-color: var(--amber); }
+</style>

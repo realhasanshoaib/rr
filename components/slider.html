@@ -1,0 +1,23 @@
+<!-- Labeled range slider with live readout — for mini-world parameters. -->
+
+<template name="slider" props="id label min max value step=1 unit=">
+<div class="slider">
+  <label for="{id}">{label}</label>
+  <input type="range" id="{id}" min="{min}" max="{max}" step="{step}" value="{value}" data-slider data-unit="{unit}">
+  <output for="{id}" id="{id}-out">{value}{unit}</output>
+</div>
+</template>
+
+<style>
+.slider { display: flex; align-items: center; gap: .75rem; margin: .5rem 0; }
+.slider label { font-size: .82rem; color: var(--muted); min-width: 7.5rem; }
+.slider input[type="range"] { flex: 1; accent-color: var(--accent); padding: 0; border: none; background: none; }
+.slider output { font-size: .82rem; color: var(--fg); font-variant-numeric: tabular-nums; min-width: 3.5rem; text-align: right; }
+</style>
+
+<script>
+document.querySelectorAll("[data-slider]").forEach((s) =>
+  s.addEventListener("input", () => {
+    document.getElementById(s.id + "-out").textContent = s.value + (s.dataset.unit || "");
+  }));
+</script>

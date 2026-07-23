@@ -1,0 +1,39 @@
+<!-- Cards, stat tiles, two-column layout. -->
+
+<template name="card">
+<div class="card">
+  <slot/>
+</div>
+</template>
+
+<template name="tiles">
+<div class="tiles">
+  <slot/>
+</div>
+</template>
+
+<template name="tile" props="icon label value caption tone=">
+<div class="card">
+  <p class="kicker"><rr-icon name="{icon}"/> {label}</p>
+  <b class="{tone}">{value}</b>
+  <span class="caption">{caption}</span>
+</div>
+</template>
+
+<template name="cols2">
+<div class="cols2">
+  <slot/>
+</div>
+</template>
+
+<style>
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 1rem 1.25rem; margin: 1rem 0; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: .75rem; margin: 1rem 0; }
+.tiles .card { margin: 0; }
+.tiles .card b { font-size: 1.35rem; font-weight: 600; display: block; font-variant-numeric: tabular-nums; }
+.tiles .card b.amber { color: var(--amber); }
+.tiles .card b.green { color: var(--green); }
+.tiles .card b.red { color: var(--red); }
+.cols2 { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+@media (max-width: 640px) { .cols2 { grid-template-columns: 1fr; } }
+</style>

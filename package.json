@@ -1,0 +1,36 @@
+{
+  "name": "rr-cli",
+  "version": "0.1.0",
+  "description": "A zero-dependency Node build system for composable HTML documents — compose <rr-*> components into one self-contained, themed HTML file.",
+  "type": "module",
+  "bin": {
+    "rr": "bin/rr.js"
+  },
+  "files": [
+    "bin",
+    "src",
+    "components",
+    "icons.svg",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "cli",
+    "html",
+    "components",
+    "static-site",
+    "documents",
+    "self-contained",
+    "no-dependencies"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hhushhas/rr.git"
+  },
+  "homepage": "https://rr.hasanshoaib.com",
+  "author": "Hasan Shoaib",
+  "license": "MIT"
+}

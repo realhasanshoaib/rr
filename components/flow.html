@@ -1,0 +1,75 @@
+<!-- Journey strip, before/after panes, timeline phases. -->
+
+<template name="journey">
+<div class="journey">
+  <slot/>
+</div>
+</template>
+
+<template name="stop" props="tone=">
+<span class="stop {tone}"><slot/></span>
+</template>
+
+<template name="sep">
+<span class="sep"><rr-icon name="arrow-right"/></span>
+</template>
+
+<template name="panes">
+<div class="panes">
+  <slot/>
+</div>
+</template>
+
+<template name="before" props="label=Before">
+<div class="pane before">
+  <p class="kicker">{label}</p>
+  <slot/>
+</div>
+</template>
+
+<template name="after" props="label=After">
+<div class="pane after">
+  <p class="kicker">{label}</p>
+  <slot/>
+</div>
+</template>
+
+<template name="phases">
+<ol class="phases">
+  <slot/>
+</ol>
+</template>
+
+<template name="phase" props="label caption state=">
+<li class="{state}">{label}<span class="caption">{caption}</span></li>
+</template>
+
+<style>
+.journey { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; margin: 1rem 0; }
+.journey .stop { border: 1px solid var(--line); background: var(--card); border-radius: 999px; padding: .25rem .8rem; font-size: .85rem; white-space: nowrap; }
+.journey .stop.new { color: var(--accent); border-color: var(--accent); box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 30%, transparent); }
+.journey .sep { color: var(--muted); flex: none; }
+.panes { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; margin: 1rem 0; }
+@media (max-width: 640px) { .panes { grid-template-columns: 1fr; } }
+.pane { border: 1px solid var(--line); border-radius: 8px; padding: .9rem 1.1rem; }
+.pane .kicker { margin-bottom: .5rem; }
+.pane.before { border-style: dashed; }
+.pane.before .kicker { color: var(--muted); }
+.pane.after { border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); }
+.pane.after .kicker { color: var(--accent); }
+ol.phases { display: flex; list-style: none; padding: 0; margin: 1.25rem 0; gap: .5rem; }
+ol.phases li { flex: 1; position: relative; padding-top: 1.35rem; font-size: .85rem; color: var(--muted); min-width: 0; }
+ol.phases li::before {
+  content: ""; position: absolute; top: 0; left: 0; width: .8rem; height: .8rem;
+  border-radius: 50%; border: 2px solid var(--line); background: var(--bg);
+}
+ol.phases li::after {
+  content: ""; position: absolute; top: .45rem; left: 1.3rem; right: .1rem; height: 1px; background: var(--line);
+}
+ol.phases li:last-child::after { display: none; }
+ol.phases li.done::before { background: var(--green); border-color: var(--green); }
+ol.phases li.done::after { background: var(--green); }
+ol.phases li.now { color: var(--fg); font-weight: 600; }
+ol.phases li.now::before { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 25%, var(--bg)); }
+ol.phases li .caption { display: block; font-weight: 400; }
+</style>

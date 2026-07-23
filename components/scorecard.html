@@ -1,0 +1,22 @@
+<!-- Scorecard: promised vs delivered, one row per spec promise. -->
+
+<template name="scorecard">
+<div class="scorecard">
+  <div class="row head"><span>Promised (spec)</span><span>Delivered (debrief)</span><span>Verdict</span></div>
+  <slot/>
+</div>
+</template>
+
+<template name="score-row" props="promised delivered verdict tone">
+<div class="row"><span>{promised}</span><span>{delivered}</span><span class="badge {tone}">{verdict}</span></div>
+</template>
+
+<style>
+.scorecard { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; margin: 1rem 0; }
+.scorecard .row { display: grid; grid-template-columns: 1fr 1fr 6.5rem; gap: 1rem; padding: .6rem 1rem; border-bottom: 1px solid var(--line); font-size: .92rem; align-items: start; }
+.scorecard .row:last-child { border-bottom: none; }
+.scorecard .row.head { background: var(--card); padding-block: .45rem; }
+.scorecard .row.head span { color: var(--muted); font-size: .75rem; text-transform: uppercase; letter-spacing: .04em; }
+.scorecard .row .badge { justify-self: start; }
+@media (max-width: 640px) { .scorecard .row { grid-template-columns: 1fr; gap: .25rem; } }
+</style>
