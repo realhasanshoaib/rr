@@ -1,0 +1,125 @@
+<!-- Self-check quizzes. Mark the right choice with correct="1"; rr-why holds
+     the explanation revealed after answering. Results persist per document
+     and copy out as agent-ready text ("start the follow-up from my gaps"). -->
+
+<template name="quiz" props="id title=Self-check">
+<section class="quiz" data-quiz="{id}">
+  <p class="kicker"><rr-icon name="puzzle"/> {title}</p>
+  <slot/>
+  <div class="quiz-foot">
+    <span class="score" data-quiz-score></span>
+    <span class="grow"></span>
+    <button type="button" data-quiz-copy>Copy results</button>
+    <button type="button" data-quiz-reset>Reset</button>
+  </div>
+</section>
+</template>
+
+<template name="question" props="q">
+<div class="q" data-q data-qtext="{q}">
+  <p class="qt">{q}</p>
+  <slot/>
+</div>
+</template>
+
+<template name="choice" props="correct=">
+<button type="button" class="choice" data-correct="{correct}"><slot/></button>
+</template>
+
+<template name="why">
+<div class="why" hidden><b>Why.</b> <slot/></div>
+</template>
+
+<style>
+.quiz { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 1rem 1.25rem; margin: 1.5rem 0; }
+.quiz .q { padding: .6rem 0; }
+.quiz .q + .q { border-top: 1px solid var(--line); }
+.quiz .qt { font-weight: 600; margin: .25rem 0 .6rem; }
+.quiz .choice {
+  display: block; width: 100%; text-align: left; margin: .35rem 0;
+  background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: .5rem .75rem;
+}
+.quiz .q.answered .choice { cursor: default; }
+.quiz .q.answered .choice:hover { border-color: var(--line); }
+.quiz .choice.picked-right { border-color: var(--green); color: var(--green); }
+.quiz .choice.picked-wrong { border-color: var(--red); color: var(--red); }
+.quiz .q.answered .choice.is-correct { border-color: var(--green); }
+.quiz .q.answered .choice:not(.is-correct):not(.picked-wrong) { opacity: .55; }
+.quiz .why { border: 1px solid var(--line); border-left: 3px solid var(--accent); background: var(--bg); border-radius: 8px; padding: .6rem .8rem; margin: .5rem 0 .25rem; font-size: .92rem; }
+.quiz-foot { display: flex; gap: .5rem; align-items: center; margin-top: .75rem; }
+.quiz-foot .grow { flex: 1; }
+.quiz-foot .score { font-size: .85rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+</style>
+
+<script>
+(() => {
+  const KEY = "rr-quiz:" + location.pathname;
+  const load = () => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch { return {}; } };
+  const store = load();
+  const save = () => localStorage.setItem(KEY, JSON.stringify(store));
+
+  document.querySelectorAll("[data-quiz]").forEach((quiz) => {
+    const results = (store[quiz.dataset.quiz] ??= {});
+    const questions = [...quiz.querySelectorAll("[data-q]")];
+
+    const answer = (q, btn, persist) => {
+      const i = questions.indexOf(q);
+      q.classList.add("answered");
+      q.querySelectorAll(".choice").forEach((c) => { if (c.dataset.correct) c.classList.add("is-correct"); });
+      btn.classList.add(btn.dataset.correct ? "picked-right" : "picked-wrong");
+      const why = q.querySelector(".why");
+      if (why) why.hidden = false;
+      if (persist) {
+        results[i] = { chose: btn.textContent.trim(), right: !!btn.dataset.correct };
+        save();
+      }
+      score();
+    };
+
+    const score = () => {
+      const done = Object.keys(results).length;
+      const right = Object.values(results).filter((r) => r.right).length;
+      quiz.querySelector("[data-quiz-score]").textContent =
+        done ? `${right}/${questions.length} right · ${done}/${questions.length} answered` : "";
+    };
+
+    questions.forEach((q, i) => {
+      q.querySelectorAll(".choice").forEach((btn) =>
+        btn.addEventListener("click", () => { if (!q.classList.contains("answered")) answer(q, btn, true); }));
+      const saved = results[i];
+      if (saved) {
+        const btn = [...q.querySelectorAll(".choice")].find((c) => c.textContent.trim() === saved.chose);
+        if (btn) answer(q, btn, false);
+      }
+    });
+    score();
+
+    quiz.querySelector("[data-quiz-copy]").addEventListener("click", async (ev) => {
+      const right = Object.values(results).filter((r) => r.right).length;
+      const out = [`Quiz results — ${document.title}: ${right}/${questions.length}`];
+      questions.forEach((q, i) => {
+        const r = results[i];
+        if (!r) { out.push(`— Q${i + 1} "${q.dataset.qtext}" — unanswered`); return; }
+        if (r.right) { out.push(`✓ Q${i + 1} "${q.dataset.qtext}"`); return; }
+        const correct = [...q.querySelectorAll(".choice")].find((c) => c.dataset.correct)?.textContent.trim();
+        out.push(`✗ Q${i + 1} "${q.dataset.qtext}" — chose "${r.chose}", correct: "${correct}"`);
+      });
+      const text = out.join("\n");
+      try { await navigator.clipboard.writeText(text); }
+      catch {
+        const ta = document.createElement("textarea");
+        ta.value = text; document.body.append(ta); ta.select();
+        document.execCommand("copy"); ta.remove();
+      }
+      const b = ev.currentTarget, prev = b.textContent;
+      b.textContent = "Copied — paste to the agent";
+      setTimeout(() => { b.textContent = prev; }, 1600);
+    });
+
+    quiz.querySelector("[data-quiz-reset]").addEventListener("click", () => {
+      store[quiz.dataset.quiz] = {};
+      save(); location.reload();
+    });
+  });
+})();
+</script>

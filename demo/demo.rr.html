@@ -1,4 +1,4 @@
-<rr-doc title="rr demo — lease keeper spec companion">
+<rr-doc title="Kit demo — lease keeper spec companion">
 
 <rr-toc>
   <rr-toc-link href="#tldr" label="TL;DR"/>
@@ -18,7 +18,7 @@
     <rr-tile icon="clock" label="P95 latency" value="412 ms" caption="was 1.9 s"/>
     <rr-tile icon="warning" label="Open risks" value="2" caption="both scoped" tone="amber"/>
   </rr-tiles>
-  <rr-callout tone="amber"><b>Open decision.</b> Lease TTL: 5 min vs 15 min.</rr-callout>
+  <rr-callout tone="amber"><b>Open decision.</b> Lease TTL: 5 min vs 15 min. Owner: Hasan.</rr-callout>
   <rr-progress label="Rollout" pct="80" n="8/10 regions"/>
   <rr-progress label="Coverage" pct="45" n="45/100 paths" tone="amber"/>
 </rr-section>
@@ -69,6 +69,34 @@
   <rr-details summary="Trace appendix (not for reading)">
     <pre><code>keeper/lease.ts:42</code></pre>
   </rr-details>
+</rr-section>
+
+<rr-section id="exhibit" title="Code exhibit" icon="doc">
+  <p>Click a line to annotate it; shift-click extends the range. The floating button copies every note in agent-ready form.</p>
+  <rr-code file="keeper/lease.ts" lang="ts" start="42">
+async function renewLease(lease: Lease) {
+  const deadline = lease.expiresAt - RENEW_MARGIN_MS;
+  if (Date.now() < deadline) return;
+  await keeper.renew(lease.id, TTL_MS);
+  metrics.count("lease.renewed");
+}
+  </rr-code>
+</rr-section>
+
+<rr-section id="quiz" title="Check yourself" icon="puzzle">
+  <rr-quiz id="lease-basics" title="Lease basics">
+    <rr-question q="What forces a zombie machine off?">
+      <rr-choice>Billing reconciliation</rr-choice>
+      <rr-choice correct="1">Lease expiry after a missed TTL</rr-choice>
+      <rr-choice>A nightly cleanup job</rr-choice>
+      <rr-why>Reclaim is tied to the lease itself — if renewals stop for any reason, the machine is shut down within one TTL. Nothing else needs to notice.</rr-why>
+    </rr-question>
+    <rr-question q="Why did the TTL ship at 15 minutes instead of 5?">
+      <rr-choice>Cost — renewals are billed</rr-choice>
+      <rr-choice correct="1">Renewal storms at 5 min crashed the keeper</rr-choice>
+      <rr-why>At 5 minutes, thousands of leases renewing together overloaded the keeper; 15 minutes trades slower reclaim for stability.</rr-why>
+    </rr-question>
+  </rr-quiz>
 </rr-section>
 
 </rr-doc>

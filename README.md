@@ -92,11 +92,41 @@ Wrap everything in `<rr-doc title="…">`. Props are attributes; children go bet
 | `rr-readout` / `rr-stat` | — / `label`, `value`, `tone=` | Stage stat strip (`tone="hot"` = red) |
 | `rr-legend` / `rr-key` | — / `kind` | State legend (`new lit dim green amber`) |
 | `rr-slider` | `id`, `label`, `min`, `max`, `value`, `step=1`, `unit=` | Range input with live readout |
+| `rr-code` | `file`, `lang`, `start=1`, `collapsed` (flag), `id=` | Annotatable code exhibit — see below |
+| `rr-quiz` / `rr-question` / `rr-choice` / `rr-why` | `id`, `title=Self-check` / `q` / `correct=` / — | Self-check quiz — see below |
+
+### Code exhibits (`rr-code`)
+
+Content is raw text — paste code as-is, no HTML escaping (only a literal `</rr-code>` inside the code would break it). If [shiki](https://shiki.style) is installed (in your project or globally — `npm i shiki`; rr resolves it from either), exhibits are syntax-highlighted **at build time** with dual light/dark themes; without it they render plain, and everything else still works. The output is always static — no highlighter ships to the browser.
+
+Readers click a line (shift-click for a range) to attach a note. A floating **Copy annotations** button exports every note as plain text — `file L42-44:`, the quoted code lines, and the note — ready to paste into a coding agent or a review thread. Annotations persist per document in `localStorage`.
+
+```html
+<rr-code file="keeper/lease.ts" lang="ts" start="42">
+async function renewLease(lease: Lease) {
+  ...
+}
+</rr-code>
+```
+
+### Quizzes (`rr-quiz`)
+
+Mark the correct `rr-choice` with `correct="1"` and always include an `rr-why` explaining the answer in plain words. Answers reveal instantly, persist per document, and **Copy results** exports the score plus every missed question with its correct answer — so a follow-up conversation (with a person or an agent) starts from the reader's actual gaps.
+
+```html
+<rr-quiz id="basics" title="Lease basics">
+  <rr-question q="What forces a zombie machine off?">
+    <rr-choice>Billing reconciliation</rr-choice>
+    <rr-choice correct="1">Lease expiry after a missed TTL</rr-choice>
+    <rr-why>Reclaim is tied to the lease itself — nothing else needs to notice.</rr-why>
+  </rr-question>
+</rr-quiz>
+```
 
 ### Conventions
 
 - One accent color; amber = open decision/risk, green = done, red = hard failure only. No gradients, no display fonts.
-- Give every jargon term an `rr-term`. Keep source code inside a collapsed `rr-details`.
+- Give every jargon term an `rr-term`. Code appears as deliberate `rr-code` exhibits (collapsed by default), never as walls of snippets in prose.
 - Calm motion: nothing autoplays; movement is feedback to the reader's interaction only.
 - Interactive mini-worlds live in `rr-stage`, never the prose column — that is the one place to write custom inline JS/SVG.
 

@@ -44,7 +44,7 @@ if (cmd === "build") {
   if (!srcPath) fail("usage: rr build <doc.rr.html> [-o out.html]");
   const outPath = outArg ? outArg : resolve(srcPath).replace(/\.rr\.html$/, ".html");
   if (resolve(outPath) === resolve(srcPath)) fail("source must end in .rr.html, or pass -o <out.html>");
-  build({ srcPath, outPath, fail, log });
+  await build({ srcPath, outPath, fail, log });
   process.exit(0);
 }
 

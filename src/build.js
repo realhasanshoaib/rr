@@ -46,13 +46,68 @@ function loadComponents(fail) {
   return { components, fileAssets };
 }
 
-export function build({ srcPath, outPath, fail, log }) {
+// Optional highlighter for <rr-code>: resolved from the document's project first,
+// then from rr's own dependencies. rr stays zero-dependency — without shiki,
+// exhibits render plain (annotation still works) with a hint logged once.
+async function loadShiki() {
+  const { createRequire } = await import("node:module");
+  const { pathToFileURL } = await import("node:url");
+  for (const base of [join(process.cwd(), "noop.js"), join(packageRoot, "noop.js")]) {
+    try {
+      return await import(pathToFileURL(createRequire(base).resolve("shiki")).href);
+    } catch {}
+  }
+  return null;
+}
+
+const CODE_RE = /<rr-code\b((?:\s+[a-z][a-z0-9-]*="[^"]*")*)\s*>([\s\S]*?)<\/rr-code>/;
+const escapeHtml = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+// Runs before generic expansion so braces, @@, or <rr- sequences inside code are inert.
+async function expandCodeExhibits(doc, usedFiles, { fail, log }) {
+  if (!CODE_RE.test(doc)) return doc;
+  const shiki = await loadShiki();
+  if (!shiki) log("note: shiki not found — <rr-code> renders unhighlighted (install with: npm i shiki)");
+  usedFiles.add("code.html");
+  for (let n = 1; ; n++) {
+    const m = doc.match(CODE_RE);
+    if (!m) break;
+    const attrs = Object.fromEntries([...m[1].matchAll(ATTR_RE)].map((a) => [a[1], a[2]]));
+    const { file, lang = "text", start = "1", id = `code-${n}` } = attrs;
+    if (!file) fail('<rr-code> requires file="…" (the exhibit label, e.g. a path)');
+    let code = m[2].replace(/^\n+|\s+$/g, "");
+    const indents = code.split("\n").filter((l) => l.trim()).map((l) => l.match(/^[ \t]*/)[0].length);
+    const indent = indents.length ? Math.min(...indents) : 0;
+    code = code.split("\n").map((l) => l.slice(indent)).join("\n");
+    let html;
+    if (shiki) {
+      try {
+        html = await shiki.codeToHtml(code, { lang, themes: { light: "github-light", dark: "github-dark" }, defaultColor: "light" });
+      } catch (e) { fail(`<rr-code file="${file}">: ${e.message}`); }
+    } else {
+      html = `<pre class="shiki"><code>${code.split("\n").map((l) => `<span class="line">${escapeHtml(l)}</span>`).join("\n")}</code></pre>`;
+    }
+    html = html.replace("<code", `<code style="--ln-start:${Number(start) - 1}"`);
+    const figure = `<figure class="rr-code" data-code-id="${id}" data-file="${file}" data-start="${start}">
+<figcaption><rr-icon name="doc"/> <code>${file}</code><span class="grow"></span><span class="hint">click a line to annotate · shift-click extends</span></figcaption>
+${html}
+</figure>`;
+    const out = "collapsed" in attrs
+      ? `<details class="src"><summary>${file} — code exhibit</summary>${figure}</details>`
+      : figure;
+    doc = doc.slice(0, m.index) + out + doc.slice(m.index + m[0].length);
+  }
+  return doc;
+}
+
+export async function build({ srcPath, outPath, fail, log }) {
   const { components, fileAssets } = loadComponents(fail);
 
   let doc = readFileSync(resolve(srcPath), "utf8");
   if (!/<rr-doc[\s>]/.test(doc)) fail('source must be wrapped in <rr-doc title="…">…</rr-doc>');
 
   const usedFiles = new Set();
+  doc = await expandCodeExhibits(doc, usedFiles, { fail, log });
   for (let guard = 0; ; guard++) {
     const m = doc.match(INNERMOST_RE);
     if (!m) break;

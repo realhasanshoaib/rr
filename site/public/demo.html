@@ -3,8 +3,41 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>rr demo — lease keeper spec companion</title>
+<title>Kit demo — lease keeper spec companion</title>
 <style>
+.rr-code { margin: 1rem 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.rr-code figcaption { display: flex; align-items: center; gap: .5rem; padding: .4rem .75rem; background: var(--card); border-bottom: 1px solid var(--line); font-size: .8rem; color: var(--muted); }
+.rr-code figcaption code { background: none; padding: 0; }
+.rr-code figcaption .grow { flex: 1; }
+.rr-code figcaption .hint { font-size: .72rem; opacity: .8; }
+.rr-code pre.shiki { margin: 0; border: 0; border-radius: 0; padding: .6rem 0; background: var(--card) !important; overflow-x: auto; }
+@media (prefers-color-scheme: dark) {
+  .rr-code pre.shiki, .rr-code pre.shiki span { color: var(--shiki-dark, inherit) !important; }
+}
+.rr-code .line { display: inline-block; width: 100%; padding-right: .75rem; cursor: pointer; }
+.rr-code code { counter-reset: line var(--ln-start, 0); }
+.rr-code .line::before { counter-increment: line; content: counter(line); display: inline-block; width: 2.6em; padding-right: .9em; text-align: right; color: var(--muted); opacity: .55; user-select: none; }
+.rr-code .line:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.rr-code .line.sel { background: color-mix(in srgb, var(--accent) 14%, transparent); }
+.rr-code .line.annotated { box-shadow: inset 3px 0 0 var(--amber); }
+.rr-code .ann-note, .rr-code .ann-editor {
+  display: block; white-space: normal; margin: .25rem .75rem .5rem 3.5em; padding: .5rem .75rem;
+  background: var(--bg); border: 1px solid var(--line); border-left: 3px solid var(--amber); border-radius: 8px;
+  font: .85rem/1.5 ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+}
+.rr-code .ann-note { cursor: pointer; }
+.rr-code .ann-note .meta { color: var(--muted); font-size: .72rem; display: block; margin-bottom: .15rem; }
+.rr-code .ann-editor textarea { width: 100%; min-height: 3.2em; resize: vertical; font: inherit; color: var(--fg); background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: .4rem .6rem; }
+.rr-code .ann-editor .row { display: flex; gap: .5rem; margin-top: .4rem; align-items: center; }
+.rr-code .ann-editor .row .grow { flex: 1; }
+.ann-bar {
+  position: fixed; right: 1rem; bottom: 1rem; z-index: 30;
+  background: var(--card); border: 1px solid var(--line); border-radius: 999px;
+  padding: .35rem .5rem; display: flex; gap: .5rem; align-items: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,.15);
+}
+.ann-bar[hidden] { display: none; }
+
 :root {
   --bg: #faf9f7; --fg: #37352f; --muted: #9b9a97; --line: #e8e6e1;
   --card: #f3f1ec; --accent: #2383e2; --amber: #d9730d; --green: #448361; --red: #d44c47;
@@ -111,6 +144,25 @@ dl.glossary dt { font-weight: 600; font-size: .95rem; }
 dl.glossary dd { margin: 0; font-size: .95rem; }
 @media (max-width: 520px) { dl.glossary { grid-template-columns: 1fr; } dl.glossary dd { margin-bottom: .5rem; } }
 
+.quiz { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 1rem 1.25rem; margin: 1.5rem 0; }
+.quiz .q { padding: .6rem 0; }
+.quiz .q + .q { border-top: 1px solid var(--line); }
+.quiz .qt { font-weight: 600; margin: .25rem 0 .6rem; }
+.quiz .choice {
+  display: block; width: 100%; text-align: left; margin: .35rem 0;
+  background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: .5rem .75rem;
+}
+.quiz .q.answered .choice { cursor: default; }
+.quiz .q.answered .choice:hover { border-color: var(--line); }
+.quiz .choice.picked-right { border-color: var(--green); color: var(--green); }
+.quiz .choice.picked-wrong { border-color: var(--red); color: var(--red); }
+.quiz .q.answered .choice.is-correct { border-color: var(--green); }
+.quiz .q.answered .choice:not(.is-correct):not(.picked-wrong) { opacity: .55; }
+.quiz .why { border: 1px solid var(--line); border-left: 3px solid var(--accent); background: var(--bg); border-radius: 8px; padding: .6rem .8rem; margin: .5rem 0 .25rem; font-size: .92rem; }
+.quiz-foot { display: flex; gap: .5rem; align-items: center; margin-top: .75rem; }
+.quiz-foot .grow { flex: 1; }
+.quiz-foot .score { font-size: .85rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+
 .scorecard { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; margin: 1rem 0; }
 .scorecard .row { display: grid; grid-template-columns: 1fr 1fr 6.5rem; gap: 1rem; padding: .6rem 1rem; border-bottom: 1px solid var(--line); font-size: .92rem; align-items: start; }
 .scorecard .row:last-child { border-bottom: none; }
@@ -197,7 +249,9 @@ dl.glossary dd { margin: 0; font-size: .95rem; }
   <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
   <symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
   <symbol id="i-branch" viewBox="0 0 24 24"><path d="M6 3v12"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></symbol>
+  <symbol id="i-puzzle" viewBox="0 0 24 24"><path d="M5 8h3a2 2 0 1 1 4 0h3v3a2 2 0 1 1 0 4v3h-3a2 2 0 1 0-4 0H5z"/></symbol>
   <symbol id="i-expand" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></symbol>
+  <symbol id="i-doc" viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M9 13h6M9 17h6"/></symbol>
   <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2 3 14h7l-1 8 10-12h-7z"/></symbol>
 </svg>
 <main>
@@ -234,7 +288,7 @@ dl.glossary dd { margin: 0; font-size: .95rem; }
   <span class="caption">both scoped</span>
 </div>
 </div>
-  <div class="callout amber"><b>Open decision.</b> Lease TTL: 5 min vs 15 min.</div>
+  <div class="callout amber"><b>Open decision.</b> Lease TTL: 5 min vs 15 min. Owner: Hasan.</div>
   <div class="progress-row">
   <span class="n label">Rollout</span>
   <div class="progress"><i class="" style="width:80%"></i></div>
@@ -321,8 +375,171 @@ dl.glossary dd { margin: 0; font-size: .95rem; }
   <pre><code>keeper/lease.ts:42</code></pre>
 </details>
 </section>
+
+<section id="exhibit">
+  <h2><svg class="icon"><use href="#i-doc"/></svg> Code exhibit</h2>
+  <p>Click a line to annotate it; shift-click extends the range. The floating button copies every note in agent-ready form.</p>
+  <figure class="rr-code" data-code-id="code-1" data-file="keeper/lease.ts" data-start="42">
+<figcaption><svg class="icon"><use href="#i-doc"/></svg> <code>keeper/lease.ts</code><span class="grow"></span><span class="hint">click a line to annotate · shift-click extends</span></figcaption>
+<pre class="shiki shiki-themes github-light github-dark" style="background-color:#fff;--shiki-dark-bg:#24292e;color:#24292e;--shiki-dark:#e1e4e8" tabindex="0"><code style="--ln-start:41"><span class="line"><span style="color:#D73A49;--shiki-dark:#F97583">async</span><span style="color:#D73A49;--shiki-dark:#F97583"> function</span><span style="color:#6F42C1;--shiki-dark:#B392F0"> renewLease</span><span style="color:#24292E;--shiki-dark:#E1E4E8">(</span><span style="color:#E36209;--shiki-dark:#FFAB70">lease</span><span style="color:#D73A49;--shiki-dark:#F97583">:</span><span style="color:#6F42C1;--shiki-dark:#B392F0"> Lease</span><span style="color:#24292E;--shiki-dark:#E1E4E8">) {</span></span>
+<span class="line"><span style="color:#D73A49;--shiki-dark:#F97583">  const</span><span style="color:#005CC5;--shiki-dark:#79B8FF"> deadline</span><span style="color:#D73A49;--shiki-dark:#F97583"> =</span><span style="color:#24292E;--shiki-dark:#E1E4E8"> lease.expiresAt </span><span style="color:#D73A49;--shiki-dark:#F97583">-</span><span style="color:#005CC5;--shiki-dark:#79B8FF"> RENEW_MARGIN_MS</span><span style="color:#24292E;--shiki-dark:#E1E4E8">;</span></span>
+<span class="line"><span style="color:#D73A49;--shiki-dark:#F97583">  if</span><span style="color:#24292E;--shiki-dark:#E1E4E8"> (Date.</span><span style="color:#6F42C1;--shiki-dark:#B392F0">now</span><span style="color:#24292E;--shiki-dark:#E1E4E8">() </span><span style="color:#D73A49;--shiki-dark:#F97583">&#x3C;</span><span style="color:#24292E;--shiki-dark:#E1E4E8"> deadline) </span><span style="color:#D73A49;--shiki-dark:#F97583">return</span><span style="color:#24292E;--shiki-dark:#E1E4E8">;</span></span>
+<span class="line"><span style="color:#D73A49;--shiki-dark:#F97583">  await</span><span style="color:#24292E;--shiki-dark:#E1E4E8"> keeper.</span><span style="color:#6F42C1;--shiki-dark:#B392F0">renew</span><span style="color:#24292E;--shiki-dark:#E1E4E8">(lease.id, </span><span style="color:#005CC5;--shiki-dark:#79B8FF">TTL_MS</span><span style="color:#24292E;--shiki-dark:#E1E4E8">);</span></span>
+<span class="line"><span style="color:#24292E;--shiki-dark:#E1E4E8">  metrics.</span><span style="color:#6F42C1;--shiki-dark:#B392F0">count</span><span style="color:#24292E;--shiki-dark:#E1E4E8">(</span><span style="color:#032F62;--shiki-dark:#9ECBFF">"lease.renewed"</span><span style="color:#24292E;--shiki-dark:#E1E4E8">);</span></span>
+<span class="line"><span style="color:#24292E;--shiki-dark:#E1E4E8">}</span></span></code></pre>
+</figure>
+</section>
+
+<section id="quiz">
+  <h2><svg class="icon"><use href="#i-puzzle"/></svg> Check yourself</h2>
+  <section class="quiz" data-quiz="lease-basics">
+  <p class="kicker"><svg class="icon"><use href="#i-puzzle"/></svg> Lease basics</p>
+  <div class="q" data-q data-qtext="What forces a zombie machine off?">
+  <p class="qt">What forces a zombie machine off?</p>
+  <button type="button" class="choice" data-correct="">Billing reconciliation</button>
+      <button type="button" class="choice" data-correct="1">Lease expiry after a missed TTL</button>
+      <button type="button" class="choice" data-correct="">A nightly cleanup job</button>
+      <div class="why" hidden><b>Why.</b> Reclaim is tied to the lease itself — if renewals stop for any reason, the machine is shut down within one TTL. Nothing else needs to notice.</div>
+</div>
+    <div class="q" data-q data-qtext="Why did the TTL ship at 15 minutes instead of 5?">
+  <p class="qt">Why did the TTL ship at 15 minutes instead of 5?</p>
+  <button type="button" class="choice" data-correct="">Cost — renewals are billed</button>
+      <button type="button" class="choice" data-correct="1">Renewal storms at 5 min crashed the keeper</button>
+      <div class="why" hidden><b>Why.</b> At 5 minutes, thousands of leases renewing together overloaded the keeper; 15 minutes trades slower reclaim for stability.</div>
+</div>
+  <div class="quiz-foot">
+    <span class="score" data-quiz-score></span>
+    <span class="grow"></span>
+    <button type="button" data-quiz-copy>Copy results</button>
+    <button type="button" data-quiz-reset>Reset</button>
+  </div>
+</section>
+</section>
 </main>
 <script>
+(() => {
+  const KEY = "rr-ann:" + location.pathname;
+  const load = () => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch { return {}; } };
+  const store = load();
+  const save = () => localStorage.setItem(KEY, JSON.stringify(store));
+  const blocks = [...document.querySelectorAll("figure[data-code-id]")];
+  if (!blocks.length) return;
+
+  const bar = document.createElement("div");
+  bar.className = "ann-bar";
+  bar.hidden = true;
+  bar.innerHTML = '<button type="button" class="primary" data-ann-copy></button><button type="button" data-ann-clear>Clear</button>';
+  document.body.append(bar);
+  const copyBtn = bar.querySelector("[data-ann-copy]");
+
+  const anns = (b) => (store[b.dataset.codeId] ??= []);
+  const lines = (b) => [...b.querySelectorAll(".line")];
+  const lineNo = (b, el) => Number(b.dataset.start) + lines(b).indexOf(el);
+  const total = () => blocks.reduce((t, b) => t + anns(b).length, 0);
+
+  function render(b) {
+    b.querySelectorAll(".ann-note, .ann-editor").forEach((n) => n.remove());
+    lines(b).forEach((l) => l.classList.remove("annotated", "sel"));
+    const ls = lines(b);
+    for (const a of anns(b).slice().sort((x, y) => x.s - y.s)) {
+      const startIdx = a.s - Number(b.dataset.start);
+      const endIdx = a.e - Number(b.dataset.start);
+      for (let i = startIdx; i <= endIdx && i < ls.length; i++) ls[i].classList.add("annotated");
+      const note = document.createElement("span");
+      note.className = "ann-note";
+      note.innerHTML = `<span class="meta">L${a.s}${a.e > a.s ? "–" + a.e : ""} · click to edit</span>`;
+      note.append(a.text);
+      note.addEventListener("click", () => edit(b, a.s, a.e, a));
+      ls[Math.min(endIdx, ls.length - 1)].after(note);
+    }
+    const n = total();
+    bar.hidden = !n;
+    copyBtn.textContent = `Copy ${n} annotation${n === 1 ? "" : "s"}`;
+  }
+
+  function edit(b, s, e, existing) {
+    document.querySelectorAll(".ann-editor").forEach((x) => x.remove());
+    render(b);
+    const ls = lines(b);
+    const startIdx = s - Number(b.dataset.start);
+    const endIdx = e - Number(b.dataset.start);
+    for (let i = startIdx; i <= endIdx && i < ls.length; i++) ls[i].classList.add("sel");
+    const ed = document.createElement("span");
+    ed.className = "ann-editor";
+    ed.innerHTML = `<textarea placeholder="Note for L${s}${e > s ? "–" + e : ""} — will be copied for the agent"></textarea>
+      <span class="row"><span class="grow"></span>
+      ${existing ? '<button type="button" data-del>Delete</button>' : ""}
+      <button type="button" data-cancel>Cancel</button>
+      <button type="button" class="primary" data-save>Save</button></span>`;
+    const ta = ed.querySelector("textarea");
+    if (existing) ta.value = existing.text;
+    ed.querySelector("[data-save]").addEventListener("click", () => {
+      const text = ta.value.trim();
+      if (existing) existing.text = text || existing.text;
+      else if (text) anns(b).push({ s, e, text });
+      if (existing && !text) drop(b, existing);
+      save(); render(b);
+    });
+    ed.querySelector("[data-cancel]").addEventListener("click", () => render(b));
+    ed.querySelector("[data-del]")?.addEventListener("click", () => { drop(b, existing); save(); render(b); });
+    ta.addEventListener("keydown", (ev) => {
+      if (ev.key === "Enter" && !ev.shiftKey) { ev.preventDefault(); ed.querySelector("[data-save]").click(); }
+      if (ev.key === "Escape") render(b);
+    });
+    ls[Math.min(endIdx, ls.length - 1)].after(ed);
+    ta.focus();
+  }
+
+  const drop = (b, a) => { store[b.dataset.codeId] = anns(b).filter((x) => x !== a); };
+
+  let anchor = null; // { block, line } for shift-click ranges
+  for (const b of blocks)
+    b.addEventListener("click", (ev) => {
+      const l = ev.target.closest(".line");
+      if (!l || ev.target.closest(".ann-note, .ann-editor")) return;
+      const n = lineNo(b, l);
+      if (ev.shiftKey && anchor && anchor.block === b) {
+        edit(b, Math.min(anchor.n, n), Math.max(anchor.n, n));
+      } else {
+        anchor = { block: b, n };
+        edit(b, n, n);
+      }
+    });
+
+  function exportText() {
+    const out = [`Annotations — ${document.title}`];
+    for (const b of blocks) {
+      const ls = lines(b);
+      for (const a of anns(b).slice().sort((x, y) => x.s - y.s)) {
+        out.push("", `${b.dataset.file} L${a.s}${a.e > a.s ? "-" + a.e : ""}:`);
+        for (let i = a.s - Number(b.dataset.start); i <= a.e - Number(b.dataset.start) && i < ls.length; i++)
+          out.push(`> ${ls[i].textContent.replace(/\s+$/, "")}`);
+        out.push(`note: ${a.text}`);
+      }
+    }
+    return out.join("\n");
+  }
+
+  copyBtn.addEventListener("click", async () => {
+    const text = exportText();
+    try { await navigator.clipboard.writeText(text); }
+    catch {
+      const ta = document.createElement("textarea");
+      ta.value = text; document.body.append(ta); ta.select();
+      document.execCommand("copy"); ta.remove();
+    }
+    const prev = copyBtn.textContent;
+    copyBtn.textContent = "Copied — paste to the agent";
+    setTimeout(() => { copyBtn.textContent = prev; }, 1600);
+  });
+  bar.querySelector("[data-ann-clear]").addEventListener("click", () => {
+    for (const b of blocks) store[b.dataset.codeId] = [];
+    save(); blocks.forEach(render);
+  });
+
+  blocks.forEach(render);
+})();
+
 document.querySelectorAll("[data-fullscreen]").forEach((b) =>
   b.addEventListener("click", () =>
     document.fullscreenElement
@@ -332,6 +549,77 @@ document.querySelectorAll("[data-fullscreen]").forEach((b) =>
 document.querySelectorAll("[data-toggle-pressed]").forEach((b) =>
   b.addEventListener("click", () =>
     b.setAttribute("aria-pressed", String(b.getAttribute("aria-pressed") !== "true"))));
+
+(() => {
+  const KEY = "rr-quiz:" + location.pathname;
+  const load = () => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch { return {}; } };
+  const store = load();
+  const save = () => localStorage.setItem(KEY, JSON.stringify(store));
+
+  document.querySelectorAll("[data-quiz]").forEach((quiz) => {
+    const results = (store[quiz.dataset.quiz] ??= {});
+    const questions = [...quiz.querySelectorAll("[data-q]")];
+
+    const answer = (q, btn, persist) => {
+      const i = questions.indexOf(q);
+      q.classList.add("answered");
+      q.querySelectorAll(".choice").forEach((c) => { if (c.dataset.correct) c.classList.add("is-correct"); });
+      btn.classList.add(btn.dataset.correct ? "picked-right" : "picked-wrong");
+      const why = q.querySelector(".why");
+      if (why) why.hidden = false;
+      if (persist) {
+        results[i] = { chose: btn.textContent.trim(), right: !!btn.dataset.correct };
+        save();
+      }
+      score();
+    };
+
+    const score = () => {
+      const done = Object.keys(results).length;
+      const right = Object.values(results).filter((r) => r.right).length;
+      quiz.querySelector("[data-quiz-score]").textContent =
+        done ? `${right}/${questions.length} right · ${done}/${questions.length} answered` : "";
+    };
+
+    questions.forEach((q, i) => {
+      q.querySelectorAll(".choice").forEach((btn) =>
+        btn.addEventListener("click", () => { if (!q.classList.contains("answered")) answer(q, btn, true); }));
+      const saved = results[i];
+      if (saved) {
+        const btn = [...q.querySelectorAll(".choice")].find((c) => c.textContent.trim() === saved.chose);
+        if (btn) answer(q, btn, false);
+      }
+    });
+    score();
+
+    quiz.querySelector("[data-quiz-copy]").addEventListener("click", async (ev) => {
+      const right = Object.values(results).filter((r) => r.right).length;
+      const out = [`Quiz results — ${document.title}: ${right}/${questions.length}`];
+      questions.forEach((q, i) => {
+        const r = results[i];
+        if (!r) { out.push(`— Q${i + 1} "${q.dataset.qtext}" — unanswered`); return; }
+        if (r.right) { out.push(`✓ Q${i + 1} "${q.dataset.qtext}"`); return; }
+        const correct = [...q.querySelectorAll(".choice")].find((c) => c.dataset.correct)?.textContent.trim();
+        out.push(`✗ Q${i + 1} "${q.dataset.qtext}" — chose "${r.chose}", correct: "${correct}"`);
+      });
+      const text = out.join("\n");
+      try { await navigator.clipboard.writeText(text); }
+      catch {
+        const ta = document.createElement("textarea");
+        ta.value = text; document.body.append(ta); ta.select();
+        document.execCommand("copy"); ta.remove();
+      }
+      const b = ev.currentTarget, prev = b.textContent;
+      b.textContent = "Copied — paste to the agent";
+      setTimeout(() => { b.textContent = prev; }, 1600);
+    });
+
+    quiz.querySelector("[data-quiz-reset]").addEventListener("click", () => {
+      store[quiz.dataset.quiz] = {};
+      save(); location.reload();
+    });
+  });
+})();
 
 document.querySelectorAll("[data-slider]").forEach((s) =>
   s.addEventListener("input", () => {

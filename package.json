@@ -1,6 +1,6 @@
 {
   "name": "rr-cli",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A zero-dependency Node build system for composable HTML documents — compose <rr-*> components into one self-contained, themed HTML file.",
   "type": "module",
   "bin": {
@@ -32,5 +32,8 @@
   },
   "homepage": "https://rr.hasanshoaib.com",
   "author": "Hasan Shoaib",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "shiki": "^4.3.1"
+  }
 }
