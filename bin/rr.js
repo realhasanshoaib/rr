@@ -11,11 +11,14 @@ const log = (msg) => console.log(msg);
 const usage = `rr — a build system for composable HTML documents
 
 Usage:
-  rr build <doc.rr.html> [-o out.html]   expand <rr-*> components into one self-contained .html
+  rr build <doc.rr.html> [-o out.html] [--theme rr] [--css file.css]
+                                          expand <rr-*> components into one self-contained .html
   rr init <name>                          scaffold a starter <name>.rr.html
   rr --help | --version
 
-By default, build emits <doc>.html beside the source.`;
+By default, build emits <doc>.html beside the source with structural CSS and
+neutral design tokens only — style it by redefining the tokens (--css inlines
+your stylesheet), or opt into the bundled look with --theme rr.`;
 
 const args = process.argv.slice(2);
 const cmd = args[0];
@@ -38,13 +41,19 @@ if (cmd === "init") {
 
 if (cmd === "build") {
   const rest = args.slice(1);
-  const outFlag = rest.indexOf("-o");
-  const outArg = outFlag !== -1 ? rest.splice(outFlag, 2)[1] : null;
+  const flagValue = (name) => {
+    const at = rest.indexOf(name);
+    return at !== -1 ? rest.splice(at, 2)[1] : null;
+  };
+  const outArg = flagValue("-o");
+  const theme = flagValue("--theme");
+  const cssPath = flagValue("--css");
+  if (theme && theme !== "rr") fail(`unknown theme "${theme}" — the bundled theme is "rr"`);
   const srcPath = rest[0];
-  if (!srcPath) fail("usage: rr build <doc.rr.html> [-o out.html]");
+  if (!srcPath) fail("usage: rr build <doc.rr.html> [-o out.html] [--theme rr] [--css file.css]");
   const outPath = outArg ? outArg : resolve(srcPath).replace(/\.rr\.html$/, ".html");
   if (resolve(outPath) === resolve(srcPath)) fail("source must end in .rr.html, or pass -o <out.html>");
-  await build({ srcPath, outPath, fail, log });
+  await build({ srcPath, outPath, theme, cssPath, fail, log });
   process.exit(0);
 }
 

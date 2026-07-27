@@ -1,7 +1,7 @@
 {
   "name": "rr-cli",
-  "version": "0.2.0",
-  "description": "A zero-dependency Node build system for composable HTML documents — compose <rr-*> components into one self-contained, themed HTML file.",
+  "version": "0.3.0",
+  "description": "A zero-dependency Node build system for composable HTML documents — compose <rr-*> components into one self-contained HTML file, styled by your own design tokens or the opt-in bundled theme.",
   "type": "module",
   "bin": {
     "rr": "bin/rr.js"

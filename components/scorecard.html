@@ -16,7 +16,7 @@
 .scorecard .row { display: grid; grid-template-columns: 1fr 1fr 7rem; gap: var(--s2); padding: var(--s2) var(--s3); border-bottom: 1px solid var(--line); font-size: var(--t-support); align-items: start; }
 .scorecard .row:last-child { border-bottom: none; }
 .scorecard .row.head { background: var(--surface); padding-block: var(--s1); }
-.scorecard .row.head span { color: var(--muted); font: 500 var(--t-chrome)/1.4 var(--mono); text-transform: uppercase; letter-spacing: .05em; }
+.scorecard .row.head span { color: var(--muted); font: 500 var(--t-chrome)/1.4 var(--label); text-transform: var(--label-case); letter-spacing: var(--label-track); }
 .scorecard .row .badge { justify-self: start; }
 @media (max-width: 640px) { .scorecard .row { grid-template-columns: 1fr; gap: 4px; } }
 </style>

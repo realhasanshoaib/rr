@@ -12,7 +12,7 @@ const iconsPath = join(packageRoot, "icons.svg");
 // blocks plus optional file-level <style> / <script> assets, included once if any
 // of the file's templates is used.
 const TEMPLATE_RE = /<template\s+name="([a-z][a-z0-9-]*)"(?:\s+props="([^"]*)")?\s*>([\s\S]*?)<\/template>/g;
-const STYLE_RE = /<style>([\s\S]*?)<\/style>/g;
+const STYLE_RE = /<style(\s+theme)?>([\s\S]*?)<\/style>/g;
 const SCRIPT_RE = /<script>([\s\S]*?)<\/script>/g;
 // Matches an innermost <rr-*> element (its body contains no other <rr-),
 // so nested components resolve inside-out; templates that themselves use
@@ -24,13 +24,15 @@ const SYMBOL_RE = /<symbol id="i-([a-z0-9-]+)"[\s\S]*?<\/symbol>/g;
 
 function loadComponents(fail) {
   const components = new Map(); // name -> { html, props: Map(name -> default|null), file }
-  const fileAssets = new Map(); // file -> { style, script }
+  const fileAssets = new Map(); // file -> { style, theme, script }
   const files = readdirSync(componentsDir).filter((f) => f.endsWith(".html")).sort();
   for (const f of files) {
     const text = readFileSync(join(componentsDir, f), "utf8");
     const outsideTemplates = text.replace(TEMPLATE_RE, "");
+    const styleBlocks = [...outsideTemplates.matchAll(STYLE_RE)];
     fileAssets.set(f, {
-      style: [...outsideTemplates.matchAll(STYLE_RE)].map((m) => m[1].trim()).join("\n"),
+      style: styleBlocks.filter((m) => !m[1]).map((m) => m[2].trim()).join("\n"),
+      theme: styleBlocks.filter((m) => m[1]).map((m) => m[2].trim()).join("\n"),
       script: [...outsideTemplates.matchAll(SCRIPT_RE)].map((m) => m[1].trim()).join("\n"),
     });
     for (const [, name, propDecl = "", html] of text.matchAll(TEMPLATE_RE)) {
@@ -100,7 +102,7 @@ ${html}
   return doc;
 }
 
-export async function build({ srcPath, outPath, fail, log }) {
+export async function build({ srcPath, outPath, theme = null, cssPath = null, fail, log }) {
   const { components, fileAssets } = loadComponents(fail);
 
   let doc = readFileSync(resolve(srcPath), "utf8");
@@ -140,7 +142,12 @@ export async function build({ srcPath, outPath, fail, log }) {
     : "";
 
   const included = [...usedFiles].sort();
-  const styles = included.map((f) => fileAssets.get(f).style).filter(Boolean).join("\n\n");
+  const layers = [
+    ...included.map((f) => fileAssets.get(f).style),
+    ...(theme ? included.map((f) => fileAssets.get(f).theme) : []),
+    ...(cssPath ? [readFileSync(resolve(cssPath), "utf8").trim()] : []),
+  ];
+  const styles = layers.filter(Boolean).join("\n\n");
   const scripts = included.map((f) => fileAssets.get(f).script).filter(Boolean).join("\n\n");
 
   doc = doc
@@ -153,4 +160,5 @@ export async function build({ srcPath, outPath, fail, log }) {
   log(`built ${resolve(outPath)}`);
   log(`  components from: ${included.join(", ")}`);
   log(`  icons inlined: ${usedIcons.size ? [...usedIcons].sort().join(", ") : "none"}`);
+  log(`  theme: ${theme ?? "none (structural CSS + neutral tokens — bring your own, or pass --theme rr)"}`);
 }

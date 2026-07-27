@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>rr — compose HTML documents from components</title>
+  <meta name="description" content="rr expands a small file of <rr-*> tags into one polished, self-contained HTML page. Zero-dependency Node CLI. Your design system, not ours." />
+  <link rel="canonical" href="https://rr.hasanshoaib.com/" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="icon" href="/favicon.png" sizes="512x512" type="image/png" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="rr — compose HTML documents from components" />
+  <meta property="og:description" content="A small file of <rr-*> tags becomes one polished, self-contained HTML page. Zero dependencies. Your design system, not ours." />
+  <meta property="og:url" content="https://rr.hasanshoaib.com/" />
+  <meta property="og:image" content="https://rr.hasanshoaib.com/og.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="rr — compose HTML documents from components" />
+  <meta name="twitter:description" content="A small file of <rr-*> tags becomes one polished, self-contained HTML page. Zero dependencies. Your design system, not ours." />
+  <meta name="twitter:image" content="https://rr.hasanshoaib.com/og.png" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "rr",
+    "operatingSystem": "macOS, Windows, Linux",
+    "applicationCategory": "DeveloperApplication",
+    "description": "A zero-dependency Node build system for composable HTML documents. Compose <rr-*> components into one self-contained HTML file.",
+    "url": "https://rr.hasanshoaib.com/",
+    "downloadUrl": "https://www.npmjs.com/package/rr-cli",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "author": { "@type": "Person", "name": "Hasan Shoaib", "url": "https://hasanshoaib.com" },
+    "sameAs": ["https://github.com/hhushhas/rr"]
+  }
+  </script>
+  <style>
+    :root {
+      --bg: #0a0a0a;
+      --fg: #ededed;
+      --muted: #a1a1a1;
+      --dim: #666;
+      --border: #262626;
+      --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+      --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--sans);
+      line-height: 1.6;
+      font-size: 15px;
+      -webkit-font-smoothing: antialiased;
+    }
+    .wrap { max-width: 680px; margin: 0 auto; padding: 0 24px; }
+    a { color: var(--fg); text-decoration: none; }
+
+    nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 20px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    nav .logo { display: flex; align-items: center; gap: 9px; font-weight: 600; letter-spacing: -0.2px; }
+    nav .logo img { width: 18px; height: 18px; display: block; }
+    nav .links { display: flex; gap: 20px; font-size: 14px; }
+    nav .links a { color: var(--muted); }
+    nav .links a:hover { color: var(--fg); }
+
+    header { padding: 96px 0 72px; }
+    h1 {
+      font-size: 40px; line-height: 1.15; font-weight: 600;
+      letter-spacing: -1.2px; margin: 0 0 16px;
+    }
+    .tagline { color: var(--muted); font-size: 16px; max-width: 520px; margin: 0 0 32px; }
+    .cta { display: flex; gap: 12px; }
+    .btn {
+      display: inline-flex; align-items: center;
+      padding: 8px 16px; border-radius: 6px;
+      font-size: 14px; font-weight: 500;
+      transition: opacity 0.15s ease, border-color 0.15s ease;
+    }
+    .btn.primary { background: var(--fg); color: var(--bg); }
+    .btn.primary:hover { opacity: 0.85; }
+    .btn.ghost { border: 1px solid var(--border); color: var(--muted); }
+    .btn.ghost:hover { border-color: var(--dim); color: var(--fg); }
+    .hero-code { margin-top: 56px; }
+
+    section { padding: 40px 0; border-top: 1px solid var(--border); }
+    .label {
+      font-family: var(--mono); font-size: 12px; color: var(--dim);
+      text-transform: uppercase; letter-spacing: 1px; margin: 0 0 20px;
+    }
+
+    pre {
+      margin: 0; padding: 20px;
+      border: 1px solid var(--border); border-radius: 8px;
+      font-family: var(--mono); font-size: 13px; line-height: 1.8;
+      overflow-x: auto; color: var(--fg);
+      background: transparent !important;
+    }
+    pre code { font-family: inherit; }
+    .filecap {
+      font-family: var(--mono); font-size: 12px; color: var(--dim);
+      margin: 0 0 8px;
+    }
+    .aftercap { color: var(--dim); font-size: 13px; margin: 12px 0 0; }
+    .aftercap a { color: var(--muted); border-bottom: 1px solid var(--border); }
+    .aftercap a:hover { color: var(--fg); }
+
+    .features { display: grid; gap: 28px; }
+    .feature h3 { margin: 0 0 4px; font-size: 15px; font-weight: 600; }
+    .feature p { margin: 0; color: var(--muted); font-size: 14px; }
+    .feature pre { margin-top: 16px; }
+    code.inline {
+      font-family: var(--mono); font-size: 0.9em;
+      border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px;
+    }
+
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 32px 0 64px;
+      color: var(--dim); font-size: 13px;
+    }
+    footer a { color: var(--muted); }
+    footer a:hover { color: var(--fg); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <nav>
+      <span class="logo"><img src="/logo.svg" alt="" /> rr</span>
+      <div class="links">
+        <a href="/demo">Demo</a>
+        <a href="#install">Install</a>
+        <a href="https://github.com/hhushhas/rr" rel="noopener">GitHub</a>
+      </div>
+    </nav>
+
+    <header>
+      <h1>Compose documents.<br />Ship one file.</h1>
+      <p class="tagline">rr expands a small file of <code class="inline">&lt;rr-*&gt;</code> tags into a polished, self-contained HTML page — specs, reports, briefs, decks. No framework, no bundler, no network requests.</p>
+      <div class="cta">
+        <a class="btn primary" href="#install">Install</a>
+        <a class="btn ghost" href="https://github.com/hhushhas/rr" rel="noopener">GitHub</a>
+      </div>
+      <div class="hero-code">
+        <p class="filecap">report.rr.html</p>
+<pre data-lang="html"><code>&lt;rr-section id="tldr" title="TL;DR" icon="bolt"&gt;
+  &lt;rr-tiles&gt;
+    &lt;rr-tile label="Shipped" value="3" icon="check" caption="this week"/&gt;
+  &lt;/rr-tiles&gt;
+  &lt;rr-callout tone="amber"&gt;&lt;b&gt;Open decision.&lt;/b&gt; TTL: 5 or 15 min.&lt;/rr-callout&gt;
+  &lt;rr-progress label="Rollout" pct="80" n="8/10 regions"/&gt;
+&lt;/rr-section&gt;</code></pre>
+        <p class="aftercap"><code class="inline">rr build report.rr.html</code> emits report.html — CSS, JS, and icons inlined, tree-shaken to what the page uses. It opens from disk and travels as an attachment. <a href="/demo">See a full document</a>.</p>
+      </div>
+    </header>
+
+    <section>
+      <p class="label">The problem</p>
+      <div class="features">
+        <div class="feature">
+          <h3>Quick documents cost an afternoon</h3>
+          <p>A spec, report, or debrief either looks like raw markdown or costs hours of hand-written CSS.</p>
+        </div>
+        <div class="feature">
+          <h3>Hand-written HTML drifts</h3>
+          <p>Ask an agent for an HTML document and it invents a new design every time — boilerplate that drifts, for a lot of tokens.</p>
+        </div>
+        <div class="feature">
+          <h3>Builds don't travel</h3>
+          <p>Anything with a bundler or a CDN can't be emailed, committed, or opened from disk without setup.</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <p class="label">The fix</p>
+      <div class="features">
+        <div class="feature">
+          <h3>A small vocabulary</h3>
+          <p>Thirty-odd tags — cards, callouts, checklists, annotatable code exhibits, flip cards, reader-paced decks. Compose out of proven pieces instead of designing from scratch.</p>
+        </div>
+        <div class="feature">
+          <h3>Correct by construction</h3>
+          <p>Unknown tag, missing prop, bad icon name — the build stops and names the fix. A composed document can't quietly rot.</p>
+        </div>
+        <div class="feature">
+          <h3>One file out</h3>
+          <p>Everything the page uses is inlined; everything it doesn't is left out. The output makes zero network requests.</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <p class="label">Your design system, not ours</p>
+      <div class="features">
+        <div class="feature">
+          <h3>No bundled look by default</h3>
+          <p>rr ships structural CSS and a neutral token contract — nothing more. Redefine the tokens and every component wears your brand. Want the bundled look instead? Pass <code class="inline">--theme rr</code>.</p>
+          <p class="filecap" style="margin-top:16px">brand.css</p>
+<pre data-lang="css"><code>:root {
+  --bg: #0a0a0a; --surface: #141414; --line: #262626;
+  --fg: #ededed; --muted: #a1a1a1; --accent: #ff5d1f;
+  --text: "Inter", system-ui, sans-serif;
+}</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <p class="label">Try it</p>
+<pre data-lang="bash"><code># scaffold, then build
+rr init report
+rr build report.rr.html
+
+# your design system, inlined last so it wins
+rr build report.rr.html --css brand.css
+
+# or the bundled theme
+rr build report.rr.html --theme rr</code></pre>
+    </section>
+
+    <section id="install">
+      <p class="label">Install</p>
+<pre data-lang="bash"><code># npm
+npm install -g rr-cli
+
+# Homebrew (macOS)
+brew install hhushhas/tap/rr
+
+# Scoop (Windows)
+scoop install https://raw.githubusercontent.com/hhushhas/rr/main/scoop/rr.json</code></pre>
+    </section>
+
+    <footer>
+      rr &middot; <a href="https://github.com/hhushhas/rr" rel="noopener">GitHub</a> &middot; <a href="https://github.com/hhushhas/rr/releases" rel="noopener">Releases</a> &middot; <a href="/demo">Demo</a> &middot; by <a href="https://hasanshoaib.com" rel="noopener">Hasan Shoaib</a>
+    </footer>
+  </div>
+</body>
+</html>

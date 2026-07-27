@@ -40,5 +40,6 @@ export function init({ name, fail, log }) {
   const title = base.replace(/[-_]/g, " ").replace(/(^|\s)\S/g, (c) => c.toUpperCase());
   writeFileSync(outPath, starter(title));
   log(`created ${outPath}`);
-  log(`next: rr build ${base}.rr.html`);
+  log(`next: rr build ${base}.rr.html            # your CSS via tokens or --css`);
+  log(`      rr build ${base}.rr.html --theme rr # the bundled look`);
 }

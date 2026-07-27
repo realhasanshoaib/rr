@@ -47,13 +47,13 @@
 
 <style>
 .journey { display: flex; align-items: center; gap: var(--s1); flex-wrap: wrap; margin: var(--s2) 0; }
-.journey .stop { border: 1px solid var(--line); background: var(--surface); border-radius: 2px; padding: 4px 12px; font: 500 var(--t-support)/1.4 var(--mono); letter-spacing: .02em; white-space: nowrap; }
+.journey .stop { border: 1px solid var(--line); background: var(--surface); border-radius: 2px; padding: 4px 12px; font: 500 var(--t-support)/1.4 var(--label); letter-spacing: var(--label-track); white-space: nowrap; }
 .journey .stop.new { color: var(--accent); border-color: var(--accent); }
 .journey .sep { color: var(--muted); flex: none; }
 .panes { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s2); margin: var(--s2) 0; }
 @media (max-width: 640px) { .panes { grid-template-columns: 1fr; } }
 .pane { border: 1px solid var(--line); border-radius: var(--radius); padding: var(--s2) var(--s3); display: flex; flex-direction: column; }
-.pane-label { margin-top: var(--s2); font: 500 var(--t-support)/1.4 var(--mono); letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+.pane-label { margin-top: var(--s2); font: 500 var(--t-support)/1.4 var(--label); letter-spacing: var(--label-track); text-transform: var(--label-case); color: var(--muted); }
 .pane.before { border-style: dashed; }
 .pane.after { border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); }
 .pane.after .pane-label { color: var(--accent); }

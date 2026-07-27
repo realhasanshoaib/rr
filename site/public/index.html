@@ -1,859 +1,241 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="color-scheme" content="light dark">
-<title>rr — compose HTML documents from components</title>
-<meta name="description" content="Compose <rr-*> components into one self-contained, themed HTML file. Zero-dependency Node CLI. Annotate code, quiz readers, ship one file.">
-<link rel="canonical" href="https://rr.hasanshoaib.com/">
-<link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="icon" href="/favicon.png" sizes="512x512" type="image/png">
-<meta property="og:type" content="website">
-<meta property="og:title" content="rr — compose HTML documents from components">
-<meta property="og:description" content="Compose <rr-*> components into one self-contained, themed HTML file. Zero-dependency Node CLI. Annotate code, quiz readers, ship one file.">
-<meta property="og:url" content="https://rr.hasanshoaib.com/">
-<meta property="og:image" content="https://rr.hasanshoaib.com/og.png">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="rr — compose HTML documents from components">
-<meta name="twitter:description" content="Compose <rr-*> components into one self-contained, themed HTML file. Zero-dependency Node CLI. Annotate code, quiz readers, ship one file.">
-<meta name="twitter:image" content="https://rr.hasanshoaib.com/og.png">
-<style>
-.rr-code { margin: var(--s2) 0; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
-.rr-code figcaption { display: flex; align-items: center; gap: var(--s1); padding: var(--s1) var(--s2); background: var(--surface); border-bottom: 1px solid var(--line); font: 500 var(--t-chrome)/1.4 var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
-.rr-code figcaption code { background: none; border: 0; padding: 0; text-transform: none; }
-.rr-code figcaption .grow { flex: 1; }
-.rr-code figcaption .hint { text-transform: none; letter-spacing: 0; opacity: .8; }
-.rr-code pre.shiki { margin: 0; border: 0; border-radius: 0; padding: var(--s1) 0; background: var(--surface) !important; overflow-x: auto; font: 400 var(--t-support)/1.55 var(--mono); }
-@media (prefers-color-scheme: dark) {
-  .rr-code pre.shiki, .rr-code pre.shiki span { color: var(--shiki-dark, inherit) !important; }
-}
-.rr-code .line { position: relative; display: inline-block; width: 100%; padding-right: var(--s2); cursor: pointer; }
-.rr-code code { counter-reset: line var(--ln-start, 0); }
-.rr-code .line::before { counter-increment: line; content: counter(line); display: inline-block; width: 2.6em; padding-right: .9em; text-align: right; color: var(--muted); opacity: .55; user-select: none; }
-.rr-code .line:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); }
-.rr-code .line.sel { background: color-mix(in srgb, var(--accent) 14%, transparent); }
-.rr-code .line.annotated::after { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--amber); }
-.rr-code .ann-note, .rr-code .ann-editor {
-  display: block; white-space: normal; margin: var(--s1) var(--s2) var(--s1) 3.5em; padding: var(--s1) var(--s2);
-  background: var(--bg); border: 1px solid var(--line); border-left: 3px solid var(--amber); border-radius: var(--radius);
-  font: 400 var(--t-support)/1.5 var(--text);
-}
-.rr-code .ann-note { cursor: pointer; }
-.rr-code .ann-note .meta { color: var(--muted); font: 500 var(--t-chrome)/1.4 var(--mono); text-transform: uppercase; letter-spacing: .04em; display: block; margin-bottom: .15rem; }
-.rr-code .ann-editor textarea { width: 100%; min-height: 3.2em; resize: vertical; font: inherit; color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: var(--s1) var(--s2); }
-.rr-code .ann-editor .row { display: flex; gap: var(--s1); margin-top: .4rem; align-items: center; }
-.rr-code .ann-editor .row .grow { flex: 1; }
-.ann-bar {
-  position: fixed; right: var(--s2); bottom: var(--s2); z-index: 30;
-  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
-  padding: var(--s1); display: flex; gap: var(--s1); align-items: center;
-}
-.ann-bar[hidden] { display: none; }
-
-:root {
-  color-scheme: light dark;
-  /* surfaces — chart paper */
-  --bg: #f4f5f3; --surface: #eceeea; --line: #dde1dd;
-  /* ink */
-  --fg: #232a2e; --muted: #7d8a90;
-  /* position + semantics */
-  --accent: #2456d6; --amber: #a8730d; --green: #3f7a5a; --red: #c04a42;
-  /* rhythm — 8px instrument */
-  --s1: 8px; --s2: 16px; --s3: 24px; --s4: 32px; --s5: 48px; --s6: 64px; --s7: 96px; --s8: 128px;
-  /* type — floors: content 16, chrome 13 */
-  --t-display: 34px; --t-section: 26px; --t-sub: 19px; --t-body: 18px; --t-support: 16px; --t-chrome: 13px;
-  /* voices */
-  --text: "Avenir Next", Avenir, Seravek, ui-sans-serif, sans-serif;
-  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  --radius: 4px; --spine-w: 150px;
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #1b2023; --surface: #232a2e; --line: #313a3f; --fg: #dde3e6; --muted: #8b979d;
-    --accent: #6b9aff; --amber: #c99245; --green: #5f9e7d; --red: #d3675f;
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>rr — compose HTML documents from components</title>
+  <meta name="description" content="rr expands a small file of <rr-*> tags into one polished, self-contained HTML page. Zero-dependency Node CLI. Your design system, not ours." />
+  <link rel="canonical" href="https://rr.hasanshoaib.com/" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="icon" href="/favicon.png" sizes="512x512" type="image/png" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="rr — compose HTML documents from components" />
+  <meta property="og:description" content="A small file of <rr-*> tags becomes one polished, self-contained HTML page. Zero dependencies. Your design system, not ours." />
+  <meta property="og:url" content="https://rr.hasanshoaib.com/" />
+  <meta property="og:image" content="https://rr.hasanshoaib.com/og.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="rr — compose HTML documents from components" />
+  <meta name="twitter:description" content="A small file of <rr-*> tags becomes one polished, self-contained HTML page. Zero dependencies. Your design system, not ours." />
+  <meta name="twitter:image" content="https://rr.hasanshoaib.com/og.png" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "rr",
+    "operatingSystem": "macOS, Windows, Linux",
+    "applicationCategory": "DeveloperApplication",
+    "description": "A zero-dependency Node build system for composable HTML documents. Compose <rr-*> components into one self-contained HTML file.",
+    "url": "https://rr.hasanshoaib.com/",
+    "downloadUrl": "https://www.npmjs.com/package/rr-cli",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "author": { "@type": "Person", "name": "Hasan Shoaib", "url": "https://hasanshoaib.com" },
+    "sameAs": ["https://github.com/hhushhas/rr"]
   }
-}
-* { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
-body {
-  margin: 0; background: var(--bg); color: var(--fg); -webkit-font-smoothing: antialiased;
-  font: 400 var(--t-body)/1.65 var(--text);
-}
-main { display: grid; grid-template-columns: 1fr min(720px, calc(100% - var(--s5))) 1fr; padding: var(--s6) 0 var(--s8); row-gap: var(--s1); }
-main > * { grid-column: 2; min-width: 0; }
-.wide { grid-column: 1 / -1; width: min(1080px, calc(100% - var(--s5))); justify-self: center; }
-h1 { font: 600 var(--t-display)/1.15 var(--text); letter-spacing: -.015em; margin: 0 0 var(--s2); }
-h2 { font: 600 var(--t-section)/1.2 var(--text); letter-spacing: -.012em; margin: var(--s6) 0 var(--s2); padding-bottom: var(--s1); border-bottom: 1px solid var(--line); }
-h3 { font: 600 var(--t-sub)/1.35 var(--text); margin: var(--s4) 0 var(--s1); }
-a { color: var(--accent); text-decoration: none; }
-a:hover { text-decoration: underline; }
+  </script>
+  <style>
+    :root {
+      --bg: #0a0a0a;
+      --fg: #ededed;
+      --muted: #a1a1a1;
+      --dim: #666;
+      --border: #262626;
+      --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+      --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--sans);
+      line-height: 1.6;
+      font-size: 15px;
+      -webkit-font-smoothing: antialiased;
+    }
+    .wrap { max-width: 680px; margin: 0 auto; padding: 0 24px; }
+    a { color: var(--fg); text-decoration: none; }
 
-/* voices ------------------------------------------------------------------ */
-.klabel { font: 500 var(--t-support)/1.4 var(--mono); letter-spacing: .05em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
-.kicker:empty { display: none; }
-.caption { color: var(--muted); font-size: var(--t-support); line-height: 1.5; }
+    nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 20px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    nav .logo { display: flex; align-items: center; gap: 9px; font-weight: 600; letter-spacing: -0.2px; }
+    nav .logo img { width: 18px; height: 18px; display: block; }
+    nav .links { display: flex; gap: 20px; font-size: 14px; }
+    nav .links a { color: var(--muted); }
+    nav .links a:hover { color: var(--fg); }
 
-/* header ------------------------------------------------------------------ */
-.doc-header { margin-bottom: var(--s2); }
-.head-line { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: var(--s1) var(--s2); }
-.head-line h1 { margin: 0; }
-.head-line .kicker { margin-left: auto; }
+    header { padding: 96px 0 72px; }
+    h1 {
+      font-size: 40px; line-height: 1.15; font-weight: 600;
+      letter-spacing: -1.2px; margin: 0 0 16px;
+    }
+    .tagline { color: var(--muted); font-size: 16px; max-width: 520px; margin: 0 0 32px; }
+    .cta { display: flex; gap: 12px; }
+    .btn {
+      display: inline-flex; align-items: center;
+      padding: 8px 16px; border-radius: 6px;
+      font-size: 14px; font-weight: 500;
+      transition: opacity 0.15s ease, border-color 0.15s ease;
+    }
+    .btn.primary { background: var(--fg); color: var(--bg); }
+    .btn.primary:hover { opacity: 0.85; }
+    .btn.ghost { border: 1px solid var(--border); color: var(--muted); }
+    .btn.ghost:hover { border-color: var(--dim); color: var(--fg); }
+    .hero-code { margin-top: 56px; }
 
-/* icons — cartographic hand: 2px, butt caps, miter joins ------------------ */
-.icon { width: 1.15em; height: 1.15em; vertical-align: -.2em; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: butt; stroke-linejoin: miter; }
+    section { padding: 40px 0; border-top: 1px solid var(--border); }
+    .label {
+      font-family: var(--mono); font-size: 12px; color: var(--dim);
+      text-transform: uppercase; letter-spacing: 1px; margin: 0 0 20px;
+    }
 
-/* the spine — signature rail (documents + decks share the visual base) ---- */
-.spine {
-  position: fixed; inset: 0 auto 0 0; width: var(--spine-w); z-index: 30;
-  background: var(--bg); border-right: 1px solid var(--line);
-  display: flex; flex-direction: column; padding: var(--s2) 0;
-}
-.spine-mark { display: flex; align-items: center; gap: 6px; padding: 0 var(--s2) var(--s2); font: 600 var(--t-chrome)/1.2 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
-.spine-mark .icon { width: 1.1em; height: 1.1em; }
-.spine-rail { flex: 1; position: relative; display: flex; flex-direction: column; gap: 2px; overflow-y: auto; }
-.spine-rail::before { content: ""; position: absolute; left: var(--s2); top: 6px; bottom: 6px; width: 1px; background: var(--line); }
-.spine-tick { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 9px; padding: 6px 8px 6px var(--s2); color: var(--muted); text-decoration: none; text-align: left; }
-.spine-tick::before { content: ""; flex: none; width: 9px; height: 2px; background: currentColor; }
-.spine-lab { font: 500 var(--t-chrome)/1.3 var(--mono); letter-spacing: .05em; text-transform: uppercase; }
-.spine-tick:hover { color: var(--fg); text-decoration: none; }
-.spine-tick[aria-current="true"] { color: var(--accent); }
-.spine-tick[aria-current="true"]::before { width: 15px; }
-.spine-tick[aria-current="true"]::after { content: ""; position: absolute; left: 13px; top: 50%; transform: translateY(-50%); width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
-body:has(.doc-spine) main { padding-left: calc(var(--spine-w) + var(--s2)); }
-section[id] { scroll-margin-top: var(--s3); }
+    pre {
+      margin: 0; padding: 20px;
+      border: 1px solid var(--border); border-radius: 8px;
+      font-family: var(--mono); font-size: 13px; line-height: 1.8;
+      overflow-x: auto; color: var(--fg);
+      background: transparent !important;
+    }
+    pre code { font-family: inherit; }
+    .filecap {
+      font-family: var(--mono); font-size: 12px; color: var(--dim);
+      margin: 0 0 8px;
+    }
+    .aftercap { color: var(--dim); font-size: 13px; margin: 12px 0 0; }
+    .aftercap a { color: var(--muted); border-bottom: 1px solid var(--border); }
+    .aftercap a:hover { color: var(--fg); }
 
-@media (max-width: 900px) {
-  .doc-spine {
-    inset: 0 0 auto 0; width: auto; height: auto; flex-direction: row; align-items: center;
-    gap: var(--s1); border-right: 0; border-bottom: 1px solid var(--line); padding: var(--s1) var(--s2); overflow-x: auto;
-  }
-  .doc-spine .spine-mark { padding: 0; }
-  .doc-spine .spine-rail { flex-direction: row; gap: var(--s1); overflow: visible; }
-  .doc-spine .spine-rail::before { display: none; }
-  .doc-spine .spine-tick { padding: 4px 6px; }
-  .doc-spine .spine-tick::before { display: none; }
-  .doc-spine .spine-tick[aria-current="true"]::after { display: none; }
-  body:has(.doc-spine) main { padding-left: 0; padding-top: var(--s5); }
-  section[id] { scroll-margin-top: var(--s6); }
-}
+    .features { display: grid; gap: 28px; }
+    .feature h3 { margin: 0 0 4px; font-size: 15px; font-weight: 600; }
+    .feature p { margin: 0; color: var(--muted); font-size: 14px; }
+    .feature pre { margin-top: 16px; }
+    code.inline {
+      font-family: var(--mono); font-size: 0.9em;
+      border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px;
+    }
 
-/* prose surfaces ---------------------------------------------------------- */
-table { border-collapse: collapse; width: 100%; font-size: var(--t-support); margin: var(--s2) 0; }
-th, td { border-bottom: 1px solid var(--line); padding: var(--s1) var(--s2); text-align: left; vertical-align: top; }
-th { color: var(--muted); font: 500 var(--t-chrome)/1.4 var(--mono); text-transform: uppercase; letter-spacing: .05em; }
-code, pre, kbd { font: 500 var(--t-support)/1.55 var(--mono); }
-code, kbd { background: var(--surface); border: 1px solid var(--line); border-radius: 2px; padding: .05rem .3rem; }
-pre { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: var(--s2) var(--s3); overflow-x: auto; }
-pre code { background: none; border: 0; padding: 0; }
-img { max-width: 100%; border-radius: var(--radius); }
-
-/* terms — dotted, definitions land in the legend panel (wide) or inline --- */
-.term { border-bottom: 1px dotted var(--muted); cursor: help; }
-.term-hot { color: var(--accent); border-bottom-color: var(--accent); border-bottom-style: solid; }
-.term-inline[hidden] { display: none; }
-.term-inline { display: block; margin: var(--s1) 0; padding: var(--s1) var(--s2); border-left: 2px solid var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); border-radius: var(--radius); font-size: var(--t-support); line-height: 1.5; color: var(--fg); }
-.legend-panel { position: fixed; right: var(--s3); bottom: var(--s3); z-index: 40; width: min(300px, 34vw); background: var(--surface); border: 1px solid var(--line); border-left: 2px solid var(--accent); border-radius: var(--radius); padding: var(--s2); }
-.legend-panel[hidden] { display: none; }
-.legend-panel-word { display: block; font: 600 var(--t-support)/1.4 var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--accent); }
-.legend-panel-def { display: block; margin-top: 6px; font-size: var(--t-support); line-height: 1.5; color: var(--fg); }
-@media (max-width: 900px) { .legend-panel { display: none !important; } }
-
-details { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: var(--s1) var(--s2); margin: var(--s2) 0; }
-summary { cursor: pointer; color: var(--muted); font-size: var(--t-support); }
-details[open] summary { margin-bottom: var(--s1); }
-details.src summary { font: 500 var(--t-chrome)/1.4 var(--mono); text-transform: uppercase; letter-spacing: .05em; }
-details.src pre { background: var(--bg); margin: .25rem 0 .5rem; }
-
-button { font: inherit; color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 6px 14px; cursor: pointer; }
-button:hover { border-color: var(--muted); }
-button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-button[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--surface)); }
-button:disabled { opacity: .45; cursor: not-allowed; }
-button:disabled:hover { border-color: var(--line); }
-button.iconbtn { padding: 6px 10px; line-height: 1; }
-input, select { font: inherit; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius); padding: 6px 10px; }
-:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-
-@media (prefers-reduced-motion: no-preference) {
-  .spine-tick::before, .term, .term-hot { transition: width .12s ease, color .12s ease, border-color .12s ease; }
-  button { transition: border-color .12s ease, color .12s ease; }
-}
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
-}
-
-.journey { display: flex; align-items: center; gap: var(--s1); flex-wrap: wrap; margin: var(--s2) 0; }
-.journey .stop { border: 1px solid var(--line); background: var(--surface); border-radius: 2px; padding: 4px 12px; font: 500 var(--t-support)/1.4 var(--mono); letter-spacing: .02em; white-space: nowrap; }
-.journey .stop.new { color: var(--accent); border-color: var(--accent); }
-.journey .sep { color: var(--muted); flex: none; }
-.panes { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s2); margin: var(--s2) 0; }
-@media (max-width: 640px) { .panes { grid-template-columns: 1fr; } }
-.pane { border: 1px solid var(--line); border-radius: var(--radius); padding: var(--s2) var(--s3); display: flex; flex-direction: column; }
-.pane-label { margin-top: var(--s2); font: 500 var(--t-support)/1.4 var(--mono); letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
-.pane.before { border-style: dashed; }
-.pane.after { border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); }
-.pane.after .pane-label { color: var(--accent); }
-ol.phases { display: flex; list-style: none; padding: 0; margin: var(--s3) 0; gap: var(--s1); }
-ol.phases li { flex: 1; position: relative; padding-top: var(--s3); font-size: var(--t-support); color: var(--muted); min-width: 0; }
-ol.phases li::before {
-  content: ""; position: absolute; top: 0; left: 0; width: .8rem; height: .8rem;
-  border-radius: 50%; border: 2px solid var(--line); background: var(--bg);
-}
-ol.phases li::after {
-  content: ""; position: absolute; top: .45rem; left: 1.3rem; right: .1rem; height: 1px; background: var(--line);
-}
-ol.phases li:last-child::after { display: none; }
-ol.phases li.done::before { background: var(--green); border-color: var(--green); }
-ol.phases li.done::after { background: var(--green); }
-ol.phases li.now { color: var(--fg); font-weight: 600; }
-ol.phases li.now::before { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 25%, var(--bg)); }
-ol.phases li .caption { display: block; font-weight: 400; }
-
-.checklist-title { font: 600 var(--t-sub)/1.35 var(--text); margin: 0 0 var(--s1); }
-ul.checklist { list-style: none; padding: 0; margin: 0; }
-ul.checklist li { display: flex; gap: var(--s1); align-items: baseline; padding: 4px 0; font-size: var(--t-support); }
-ul.checklist li .icon { flex: none; vertical-align: -.15em; }
-ul.checklist li.done .icon { color: var(--green); }
-ul.checklist li.todo .cbox { flex: none; width: .95em; height: .95em; border: 1.5px solid var(--muted); border-radius: 2px; align-self: center; }
-ul.checklist li.todo { color: var(--muted); }
-dl.glossary { display: grid; grid-template-columns: max-content 1fr; gap: var(--s1) var(--s3); margin: var(--s2) 0; }
-dl.glossary dt { font-weight: 600; font-size: var(--t-support); }
-dl.glossary dd { margin: 0; font-size: var(--t-support); color: var(--muted); }
-@media (max-width: 520px) { dl.glossary { grid-template-columns: 1fr; } dl.glossary dd { margin-bottom: var(--s1); } }
-
-/* recall — flip cards -------------------------------------------------------*/
-.recall-set { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: var(--s2) var(--s3); margin: var(--s3) 0; }
-.recall-head { display: flex; align-items: center; gap: var(--s1); font: 600 var(--t-sub)/1.3 var(--mono); letter-spacing: .02em; color: var(--fg); margin-bottom: var(--s2); }
-.recall-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: var(--s2); }
-.recall { display: flex; flex-direction: column; }
-.recall-flip { display: grid; width: 100%; text-align: left; background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius); padding: var(--s2) var(--s3); cursor: pointer; }
-.recall-flip:hover { border-color: var(--muted); }
-.recall[data-flipped="true"] .recall-flip { border-color: var(--accent); }
-.recall-face { grid-area: 1 / 1; min-width: 0; }
-.recall-face.back { visibility: hidden; opacity: 0; }
-.recall[data-flipped="true"] .recall-face.front { visibility: hidden; opacity: 0; }
-.recall[data-flipped="true"] .recall-face.back { visibility: visible; opacity: 1; }
-.recall-q, .recall-a { display: block; font: 600 var(--t-body)/1.5 var(--text); }
-.recall-why { display: block; font-size: var(--t-support); line-height: 1.55; color: var(--muted); margin-top: var(--s1); }
-.recall-cue { display: block; margin-top: var(--s2); font: 500 var(--t-support)/1.4 var(--mono); letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
-.recall-mark { display: flex; align-items: center; gap: var(--s1); margin-top: var(--s1); }
-.recall-mark[hidden] { display: none; }
-.recall-tag { font: 500 var(--t-support)/1.4 var(--mono); letter-spacing: .05em; text-transform: uppercase; color: var(--accent); }
-.recall-mark .grow { flex: 1; }
-.recall-self { font: 500 var(--t-chrome)/1 var(--mono); color: var(--muted); border: 1px solid var(--line); border-radius: var(--radius); padding: 6px 10px; background: var(--bg); text-transform: uppercase; letter-spacing: .05em; }
-.recall-self:hover { color: var(--fg); border-color: var(--muted); }
-.recall[data-mark="got"] [data-recall-got] { color: var(--green); border-color: var(--green); }
-.recall[data-mark="miss"] [data-recall-miss] { color: var(--red); border-color: var(--red); }
-.recall-foot { display: flex; gap: var(--s1); align-items: center; margin-top: var(--s2); }
-.recall-foot .grow { flex: 1; }
-.recall-score { font: 500 var(--t-chrome)/1.4 var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
-
-/* quiz — multiple choice ----------------------------------------------------*/
-.quiz { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: var(--s2) var(--s3); margin: var(--s3) 0; }
-.quiz-head { display: flex; align-items: center; gap: var(--s1); font: 600 var(--t-sub)/1.3 var(--mono); letter-spacing: .02em; color: var(--fg); margin-bottom: var(--s1); }
-.quiz .q { padding: var(--s1) 0; }
-.quiz .q + .q { border-top: 1px solid var(--line); }
-.quiz .qt { font: 600 var(--t-body)/1.5 var(--text); margin: .25rem 0 var(--s1); }
-.quiz .choice { display: block; width: 100%; text-align: left; margin: 6px 0; background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius); padding: var(--s1) var(--s2); font-size: var(--t-support); }
-.quiz .q.answered .choice { cursor: default; }
-.quiz .q.answered .choice:hover { border-color: var(--line); }
-.quiz .choice.picked-right { border-color: var(--green); color: var(--green); }
-.quiz .choice.picked-wrong { border-color: var(--red); color: var(--red); }
-.quiz .q.answered .choice.is-correct { border-color: var(--green); }
-.quiz .q.answered .choice:not(.is-correct):not(.picked-wrong) { opacity: .55; }
-.quiz .why { border: 1px solid var(--line); border-left: 3px solid var(--accent); background: var(--bg); border-radius: var(--radius); padding: var(--s1) var(--s2); margin: var(--s1) 0; font-size: var(--t-support); }
-.quiz-foot { display: flex; gap: var(--s1); align-items: center; margin-top: var(--s2); }
-.quiz-foot .grow { flex: 1; }
-.quiz-foot .score { font: 500 var(--t-chrome)/1.4 var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
-
-@media (prefers-reduced-motion: no-preference) {
-  .recall-face { transition: opacity .15s ease-out; }
-}
-
-.scorecard { border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; margin: var(--s2) 0; }
-.scorecard .row { display: grid; grid-template-columns: 1fr 1fr 7rem; gap: var(--s2); padding: var(--s2) var(--s3); border-bottom: 1px solid var(--line); font-size: var(--t-support); align-items: start; }
-.scorecard .row:last-child { border-bottom: none; }
-.scorecard .row.head { background: var(--surface); padding-block: var(--s1); }
-.scorecard .row.head span { color: var(--muted); font: 500 var(--t-chrome)/1.4 var(--mono); text-transform: uppercase; letter-spacing: .05em; }
-.scorecard .row .badge { justify-self: start; }
-@media (max-width: 640px) { .scorecard .row { grid-template-columns: 1fr; gap: 4px; } }
-
-.badge {
-  display: inline-block; padding: 2px 10px; border-radius: 2px; font: 600 var(--t-support)/1.5 var(--mono);
-  letter-spacing: .05em; text-transform: uppercase; border: 1px solid var(--line); color: var(--muted);
-}
-.badge.accent { color: var(--accent); border-color: var(--accent); }
-.badge.green  { color: var(--green);  border-color: var(--green); }
-.badge.amber  { color: var(--amber);  border-color: var(--amber); }
-.badge.red    { color: var(--red);    border-color: var(--red); }
-.callout { border: 1px solid var(--line); border-left: 3px solid var(--accent); background: var(--surface); border-radius: var(--radius); padding: var(--s2) var(--s3); margin: var(--s2) 0; }
-.callout.amber { border-left-color: var(--amber); }
-.callout.red   { border-left-color: var(--red); }
-.progress { height: 4px; background: var(--line); overflow: hidden; }
-.progress > i { display: block; height: 100%; background: var(--green); }
-.progress > i.accent { background: var(--accent); }
-.progress > i.amber { background: var(--amber); }
-.progress > i.red { background: var(--red); }
-.progress-row { display: flex; align-items: center; gap: var(--s2); margin: var(--s1) 0; }
-.progress-row .progress { flex: 1; }
-.progress-row .n { font: 500 var(--t-support)/1.4 var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; letter-spacing: .03em; }
-.progress-row .n.label { min-width: 8rem; }
-
-.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: var(--s2) var(--s3); margin: var(--s2) 0; }
-.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: var(--s2); margin: var(--s2) 0; }
-.tiles .card { margin: 0; }
-.tile { display: flex; flex-direction: column; }
-.tile-v { font: 600 26px/1.15 var(--mono); letter-spacing: -.01em; font-variant-numeric: tabular-nums; }
-.tile-v.accent { color: var(--accent); }
-.tile-v.amber { color: var(--amber); }
-.tile-v.green { color: var(--green); }
-.tile-v.red { color: var(--red); }
-.tile-l { font: 500 var(--t-support)/1.4 var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--muted); margin-top: 6px; }
-.tile-l .icon { width: 1em; height: 1em; }
-.tile .caption { margin-top: 2px; }
-.cols2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s2); }
-@media (max-width: 640px) { .cols2 { grid-template-columns: 1fr; } }
-</style>
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 32px 0 64px;
+      color: var(--dim); font-size: 13px;
+    }
+    footer a { color: var(--muted); }
+    footer a:hover { color: var(--fg); }
+  </style>
 </head>
 <body>
-<svg style="display:none" aria-hidden="true">
-  <symbol id="i-users" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
-  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></symbol>
-  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
-  <symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
-  <symbol id="i-puzzle" viewBox="0 0 24 24"><path d="M5 8h3a2 2 0 1 1 4 0h3v3a2 2 0 1 1 0 4v3h-3a2 2 0 1 0-4 0H5z"/></symbol>
-  <symbol id="i-doc" viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M9 13h6M9 17h6"/></symbol>
-  <symbol id="i-folder" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></symbol>
-  <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2 3 14h7l-1 8 10-12h-7z"/></symbol>
-  <symbol id="i-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2.1 5-5 2.1 2.1-5z"/></symbol>
-</svg>
-<main>
-<style>
-/* site-only chrome, inline so the page stays self-contained */
-.hero { grid-column: 1 / -1; width: min(1080px, calc(100% - 3rem)); justify-self: center; padding: 4rem 0 1rem; }
-.hero h1 { font-size: clamp(4.5rem, 13vw, 8rem); line-height: .95; letter-spacing: -.045em; font-weight: 700; margin: 0 0 1rem; }
-.hero h1 .cursor { display: inline-block; width: .48em; height: .82em; background: var(--accent); margin-left: .06em; animation: rr-blink 1.2s steps(1) infinite; }
-@keyframes rr-blink { 50% { opacity: 0; } }
-.hero .thesis { font-size: 1.15rem; max-width: 46rem; margin: 0 0 1.75rem; }
-.install { display: flex; align-items: center; gap: .9rem; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: .65rem .6rem .65rem 1rem; width: fit-content; max-width: 100%; font: .95rem/1.5 ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
-.install .prompt { color: var(--muted); user-select: none; }
-.install code { background: none; padding: 0; }
-.also { margin-top: .6rem; }
-nav.toc .brand { color: var(--fg); font-weight: 600; margin-right: .5rem; }
-nav.toc .grow { flex: 1; }
-nav.toc button { font-size: .8rem; padding: .15rem .6rem; border-radius: 999px; }
-.seam {
-  position: absolute; top: -.72em; right: .65rem; z-index: 5;
-  font: 13px/1.5 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  color: var(--accent); background: var(--bg); border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line));
-  border-radius: 4px; padding: 0 .35rem; pointer-events: none; white-space: nowrap;
-}
-.specimen { position: relative; }
-body.seams-off .seam { display: none; }
-.foot { color: var(--muted); font-size: .85rem; border-top: 1px solid var(--line); padding-top: 1.25rem; margin-top: 3rem; }
-</style>
+  <div class="wrap">
+    <nav>
+      <span class="logo"><img src="/logo.svg" alt="" /> rr</span>
+      <div class="links">
+        <a href="/demo">Demo</a>
+        <a href="#install">Install</a>
+        <a href="https://github.com/hhushhas/rr" rel="noopener">GitHub</a>
+      </div>
+    </nav>
 
-<nav class="spine doc-spine" aria-label="Sections">
-  <div class="spine-mark"><svg class="icon"><use href="#i-compass"/></svg> Map</div>
-  <div class="spine-rail">
-    <a class="spine-tick" href="#top"><span class="spine-lab"></span></a>
-  <a class="spine-tick" href="#write"><span class="spine-lab">You write</span></a>
-  <a class="spine-tick" href="#why"><span class="spine-lab">Why</span></a>
-  <a class="spine-tick" href="#live"><span class="spine-lab">Try it here</span></a>
-  <a class="spine-tick" href="#library"><span class="spine-lab">Library</span></a>
-  <a class="spine-tick" href="/demo"><span class="spine-lab">Full demo</span></a>
-  <a class="spine-tick" href="https://github.com/hhushhas/rr"><span class="spine-lab">GitHub ↗</span></a>
+    <header>
+      <h1>Compose documents.<br />Ship one file.</h1>
+      <p class="tagline">rr expands a small file of <code class="inline">&lt;rr-*&gt;</code> tags into a polished, self-contained HTML page — specs, reports, briefs, decks. No framework, no bundler, no network requests.</p>
+      <div class="cta">
+        <a class="btn primary" href="#install">Install</a>
+        <a class="btn ghost" href="https://github.com/hhushhas/rr" rel="noopener">GitHub</a>
+      </div>
+      <div class="hero-code">
+        <p class="filecap">report.rr.html</p>
+<pre class="shiki github-dark-default" style="background-color:#0d1117;color:#e6edf3" tabindex="0"><code><span class="line"><span style="color:#E6EDF3">&#x3C;</span><span style="color:#7EE787">rr-section</span><span style="color:#79C0FF"> id</span><span style="color:#E6EDF3">=</span><span style="color:#A5D6FF">"tldr"</span><span style="color:#79C0FF"> title</span><span style="color:#E6EDF3">=</span><span style="color:#A5D6FF">"TL;DR"</span><span style="color:#79C0FF"> icon</span><span style="color:#E6EDF3">=</span><span style="color:#A5D6FF">"bolt"</span><span style="color:#E6EDF3">></span></span>
+<span class="line"><span style="color:#E6EDF3">  &#x3C;</span><span style="color:#7EE787">rr-tiles</span><span style="color:#E6EDF3">></span></span>
+<span class="line"><span style="color:#E6EDF3">    &#x3C;</span><span style="color:#7EE787">rr-tile</span><span style="color:#79C0FF"> label</span><span style="color:#E6EDF3">=</span><span style="color:#A5D6FF">"Shipped"</span><span style="color:#79C0FF"> value</span><span style="color:#E6EDF3">=</span><span style="color:#A5D6FF">"3"</span><span style="color:#79C0FF"> icon</span><span style="color:#E6EDF3">=</span><span style="color:#A5D6FF">"check"</span><span style="color:#79C0FF"> caption</span><span style="color:#E6EDF3">=</span><span style="color:#A5D6FF">"this week"</span><span style="color:#E6EDF3">/></span></span>
+<span class="line"><span style="color:#E6EDF3">  &#x3C;/</span><span style="color:#7EE787">rr-tiles</span><span style="color:#E6EDF3">></span></span>
+<span class="line"><span style="color:#E6EDF3">  &#x3C;</span><span style="color:#7EE787">rr-callout</span><span style="color:#79C0FF"> tone</span><span style="color:#E6EDF3">=</span><span style="color:#A5D6FF">"amber"</span><span style="color:#E6EDF3">>&#x3C;</span><span style="color:#7EE787">b</span><span style="color:#E6EDF3">>Open decision.&#x3C;/</span><span style="color:#7EE787">b</span><span style="color:#E6EDF3">> TTL: 5 or 15 min.&#x3C;/</span><span style="color:#7EE787">rr-callout</span><span style="color:#E6EDF3">></span></span>
+<span class="line"><span style="color:#E6EDF3">  &#x3C;</span><span style="color:#7EE787">rr-progress</span><span style="color:#79C0FF"> label</span><span style="color:#E6EDF3">=</span><span style="color:#A5D6FF">"Rollout"</span><span style="color:#79C0FF"> pct</span><span style="color:#E6EDF3">=</span><span style="color:#A5D6FF">"80"</span><span style="color:#79C0FF"> n</span><span style="color:#E6EDF3">=</span><span style="color:#A5D6FF">"8/10 regions"</span><span style="color:#E6EDF3">/></span></span>
+<span class="line"><span style="color:#E6EDF3">&#x3C;/</span><span style="color:#7EE787">rr-section</span><span style="color:#E6EDF3">></span></span></code></pre>
+        <p class="aftercap"><code class="inline">rr build report.rr.html</code> emits report.html — CSS, JS, and icons inlined, tree-shaken to what the page uses. It opens from disk and travels as an attachment. <a href="/demo">See a full document</a>.</p>
+      </div>
+    </header>
+
+    <section>
+      <p class="label">The problem</p>
+      <div class="features">
+        <div class="feature">
+          <h3>Quick documents cost an afternoon</h3>
+          <p>A spec, report, or debrief either looks like raw markdown or costs hours of hand-written CSS.</p>
+        </div>
+        <div class="feature">
+          <h3>Hand-written HTML drifts</h3>
+          <p>Ask an agent for an HTML document and it invents a new design every time — boilerplate that drifts, for a lot of tokens.</p>
+        </div>
+        <div class="feature">
+          <h3>Builds don't travel</h3>
+          <p>Anything with a bundler or a CDN can't be emailed, committed, or opened from disk without setup.</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <p class="label">The fix</p>
+      <div class="features">
+        <div class="feature">
+          <h3>A small vocabulary</h3>
+          <p>Thirty-odd tags — cards, callouts, checklists, annotatable code exhibits, flip cards, reader-paced decks. Compose out of proven pieces instead of designing from scratch.</p>
+        </div>
+        <div class="feature">
+          <h3>Correct by construction</h3>
+          <p>Unknown tag, missing prop, bad icon name — the build stops and names the fix. A composed document can't quietly rot.</p>
+        </div>
+        <div class="feature">
+          <h3>One file out</h3>
+          <p>Everything the page uses is inlined; everything it doesn't is left out. The output makes zero network requests.</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <p class="label">Your design system, not ours</p>
+      <div class="features">
+        <div class="feature">
+          <h3>No bundled look by default</h3>
+          <p>rr ships structural CSS and a neutral token contract — nothing more. Redefine the tokens and every component wears your brand. Want the bundled look instead? Pass <code class="inline">--theme rr</code>.</p>
+          <p class="filecap" style="margin-top:16px">brand.css</p>
+<pre class="shiki github-dark-default" style="background-color:#0d1117;color:#e6edf3" tabindex="0"><code><span class="line"><span style="color:#79C0FF">:root</span><span style="color:#E6EDF3"> {</span></span>
+<span class="line"><span style="color:#FFA657">  --bg</span><span style="color:#E6EDF3">: </span><span style="color:#79C0FF">#0a0a0a</span><span style="color:#E6EDF3">; </span><span style="color:#FFA657">--surface</span><span style="color:#E6EDF3">: </span><span style="color:#79C0FF">#141414</span><span style="color:#E6EDF3">; </span><span style="color:#FFA657">--line</span><span style="color:#E6EDF3">: </span><span style="color:#79C0FF">#262626</span><span style="color:#E6EDF3">;</span></span>
+<span class="line"><span style="color:#FFA657">  --fg</span><span style="color:#E6EDF3">: </span><span style="color:#79C0FF">#ededed</span><span style="color:#E6EDF3">; </span><span style="color:#FFA657">--muted</span><span style="color:#E6EDF3">: </span><span style="color:#79C0FF">#a1a1a1</span><span style="color:#E6EDF3">; </span><span style="color:#FFA657">--accent</span><span style="color:#E6EDF3">: </span><span style="color:#79C0FF">#ff5d1f</span><span style="color:#E6EDF3">;</span></span>
+<span class="line"><span style="color:#FFA657">  --text</span><span style="color:#E6EDF3">: </span><span style="color:#A5D6FF">"Inter"</span><span style="color:#E6EDF3">, </span><span style="color:#79C0FF">system-ui</span><span style="color:#E6EDF3">, </span><span style="color:#79C0FF">sans-serif</span><span style="color:#E6EDF3">;</span></span>
+<span class="line"><span style="color:#E6EDF3">}</span></span></code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <p class="label">Try it</p>
+<pre class="shiki github-dark-default" style="background-color:#0d1117;color:#e6edf3" tabindex="0"><code><span class="line"><span style="color:#8B949E"># scaffold, then build</span></span>
+<span class="line"><span style="color:#FFA657">rr</span><span style="color:#A5D6FF"> init</span><span style="color:#A5D6FF"> report</span></span>
+<span class="line"><span style="color:#FFA657">rr</span><span style="color:#A5D6FF"> build</span><span style="color:#A5D6FF"> report.rr.html</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#8B949E"># your design system, inlined last so it wins</span></span>
+<span class="line"><span style="color:#FFA657">rr</span><span style="color:#A5D6FF"> build</span><span style="color:#A5D6FF"> report.rr.html</span><span style="color:#79C0FF"> --css</span><span style="color:#A5D6FF"> brand.css</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#8B949E"># or the bundled theme</span></span>
+<span class="line"><span style="color:#FFA657">rr</span><span style="color:#A5D6FF"> build</span><span style="color:#A5D6FF"> report.rr.html</span><span style="color:#79C0FF"> --theme</span><span style="color:#A5D6FF"> rr</span></span></code></pre>
+    </section>
+
+    <section id="install">
+      <p class="label">Install</p>
+<pre class="shiki github-dark-default" style="background-color:#0d1117;color:#e6edf3" tabindex="0"><code><span class="line"><span style="color:#8B949E"># npm</span></span>
+<span class="line"><span style="color:#FFA657">npm</span><span style="color:#A5D6FF"> install</span><span style="color:#79C0FF"> -g</span><span style="color:#A5D6FF"> rr-cli</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#8B949E"># Homebrew (macOS)</span></span>
+<span class="line"><span style="color:#FFA657">brew</span><span style="color:#A5D6FF"> install</span><span style="color:#A5D6FF"> hhushhas/tap/rr</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#8B949E"># Scoop (Windows)</span></span>
+<span class="line"><span style="color:#FFA657">scoop</span><span style="color:#A5D6FF"> install</span><span style="color:#A5D6FF"> https://raw.githubusercontent.com/hhushhas/rr/main/scoop/rr.json</span></span></code></pre>
+    </section>
+
+    <footer>
+      rr &middot; <a href="https://github.com/hhushhas/rr" rel="noopener">GitHub</a> &middot; <a href="https://github.com/hhushhas/rr/releases" rel="noopener">Releases</a> &middot; <a href="/demo">Demo</a> &middot; by <a href="https://hasanshoaib.com" rel="noopener">Hasan Shoaib</a>
+    </footer>
   </div>
-</nav>
-
-<div class="hero" id="top">
-  <p class="kicker">Composable HTML documents · zero dependencies</p>
-  <h1>rr<span class="cursor"></span></h1>
-  <p class="thesis">A build system for documents meant to be <em>read</em> — specs, reports, debriefs. Compose <code>&lt;rr-*&gt;</code> components; get one polished, self-contained HTML file. No server, no framework, nothing to drift.</p>
-  <div class="install"><span class="prompt">$</span><code id="install-cmd">npm install -g rr-cli</code><button type="button" id="copy-install">Copy</button></div>
-  <p class="caption also">also <code>brew install hhushhas/tap/rr</code> · scoop on Windows · <a href="https://github.com/hhushhas/rr#install">all installs</a></p>
-  <p class="caption">Every labeled box below is a live component, rendered by rr from <a href="https://github.com/hhushhas/rr/blob/main/site/index.rr.html">this page's own <code>.rr.html</code> source</a>. The labels are the tags. <b>seams</b> in the nav hides them.</p>
-</div>
-
-<section id="write">
-  <h2><svg class="icon"><use href="#i-doc"/></svg> You write eleven lines</h2>
-  <div class="panes">
-  <div class="pane before">
-  <pre style="margin:0"><code>&lt;rr-section title="TL;DR" icon="bolt"&gt;
-  &lt;rr-tiles&gt;
-    &lt;rr-tile label="Shipped" value="3"
-             icon="check" caption="this week"/&gt;
-  &lt;/rr-tiles&gt;
-  &lt;rr-callout tone="amber"&gt;
-    &lt;b&gt;Open decision.&lt;/b&gt; TTL: 5 or 15 min.
-  &lt;/rr-callout&gt;
-  &lt;rr-progress label="Rollout" pct="80"
-               n="8/10 regions"/&gt;
-&lt;/rr-section&gt;</code></pre>
-  <span class="pane-label">report.rr.html — the whole source</span>
-</div>
-    <div class="pane after">
-  <div class="tiles">
-  <div class="card tile">
-  <div class="tile-v ">3</div>
-  <div class="tile-l"><svg class="icon"><use href="#i-check"/></svg> Shipped</div>
-  <span class="caption">this week</span>
-</div>
-</div>
-      <div class="callout amber"><b>Open decision.</b> TTL: 5 or 15 min.</div>
-      <div class="progress-row">
-  <span class="n label">Rollout</span>
-  <div class="progress"><i class="" style="width:80%"></i></div>
-  <span class="n">8/10 regions</span>
-</div>
-  <span class="pane-label">report.html — what ships</span>
-</div>
-</div>
-  <p><code>rr build</code> expands the tags, then inlines <b>only</b> the CSS, JS, and icons those components use — light and dark themes included. The file opens from disk, travels as an attachment, and makes zero network requests.</p>
-</section>
-
-<section id="why">
-  <h2><svg class="icon"><use href="#i-bolt"/></svg> Why it exists</h2>
-  <div class="tiles">
-  <div class="card tile">
-  <div class="tile-v ">fails loudly</div>
-  <div class="tile-l"><svg class="icon"><use href="#i-shield"/></svg> Correct by construction</div>
-  <span class="caption">unknown tag, missing prop, bad icon — the build stops and names the fix</span>
-</div>
-    <div class="card tile">
-  <div class="tile-v ">1 file</div>
-  <div class="tile-l"><svg class="icon"><use href="#i-folder"/></svg> One artifact</div>
-  <span class="caption">CSS, JS, icons inlined; tree-shaken to what the page uses</span>
-</div>
-    <div class="card tile">
-  <div class="tile-v ">30+ tags</div>
-  <div class="tile-l"><svg class="icon"><use href="#i-users"/></svg> Made for agents</div>
-  <span class="caption">a small vocabulary beats an 800-line style guide</span>
-</div>
-</div>
-  <p>rr began as a fix for AI-generated documents: agents hand-writing HTML produce drifting, boilerplate design. Give them components instead and drift becomes a build error — every document comes out deliberate, for a fraction of the tokens. It works the same when the author is a person.</p>
-</section>
-
-<section id="live">
-  <h2><svg class="icon"><use href="#i-puzzle"/></svg> Try 0.2.0 right here</h2>
-  <p><b>Annotate code.</b> This is rr's real expansion loop. Click a line to attach a note — shift-click extends — then the floating button copies every note as paste-ready text for a review thread or a coding agent.</p>
-  <figure class="rr-code" data-code-id="code-1" data-file="src/build.js" data-start="118">
-<figcaption><svg class="icon"><use href="#i-doc"/></svg> <code>src/build.js</code><span class="grow"></span><span class="hint">click a line to annotate · shift-click extends</span></figcaption>
-<pre class="shiki shiki-themes github-light github-dark" style="background-color:#fff;--shiki-dark-bg:#24292e;color:#24292e;--shiki-dark:#e1e4e8" tabindex="0"><code style="--ln-start:117"><span class="line"><span style="color:#D73A49;--shiki-dark:#F97583">const</span><span style="color:#005CC5;--shiki-dark:#79B8FF"> m</span><span style="color:#D73A49;--shiki-dark:#F97583"> =</span><span style="color:#24292E;--shiki-dark:#E1E4E8"> doc.</span><span style="color:#6F42C1;--shiki-dark:#B392F0">match</span><span style="color:#24292E;--shiki-dark:#E1E4E8">(</span><span style="color:#005CC5;--shiki-dark:#79B8FF">INNERMOST_RE</span><span style="color:#24292E;--shiki-dark:#E1E4E8">);</span></span>
-<span class="line"><span style="color:#D73A49;--shiki-dark:#F97583">if</span><span style="color:#24292E;--shiki-dark:#E1E4E8"> (</span><span style="color:#D73A49;--shiki-dark:#F97583">!</span><span style="color:#24292E;--shiki-dark:#E1E4E8">m) </span><span style="color:#D73A49;--shiki-dark:#F97583">break</span><span style="color:#24292E;--shiki-dark:#E1E4E8">;</span></span>
-<span class="line"><span style="color:#D73A49;--shiki-dark:#F97583">const</span><span style="color:#005CC5;--shiki-dark:#79B8FF"> comp</span><span style="color:#D73A49;--shiki-dark:#F97583"> =</span><span style="color:#24292E;--shiki-dark:#E1E4E8"> components.</span><span style="color:#6F42C1;--shiki-dark:#B392F0">get</span><span style="color:#24292E;--shiki-dark:#E1E4E8">(name);</span></span>
-<span class="line"><span style="color:#D73A49;--shiki-dark:#F97583">if</span><span style="color:#24292E;--shiki-dark:#E1E4E8"> (</span><span style="color:#D73A49;--shiki-dark:#F97583">!</span><span style="color:#24292E;--shiki-dark:#E1E4E8">comp) </span><span style="color:#6F42C1;--shiki-dark:#B392F0">fail</span><span style="color:#24292E;--shiki-dark:#E1E4E8">(</span><span style="color:#032F62;--shiki-dark:#9ECBFF">`unknown component: ${</span><span style="color:#24292E;--shiki-dark:#E1E4E8">name</span><span style="color:#032F62;--shiki-dark:#9ECBFF">}. Known: ${</span><span style="color:#24292E;--shiki-dark:#E1E4E8">known</span><span style="color:#032F62;--shiki-dark:#9ECBFF">}`</span><span style="color:#24292E;--shiki-dark:#E1E4E8">);</span></span>
-<span class="line"><span style="color:#24292E;--shiki-dark:#E1E4E8">usedFiles.</span><span style="color:#6F42C1;--shiki-dark:#B392F0">add</span><span style="color:#24292E;--shiki-dark:#E1E4E8">(comp.file);</span></span></code></pre>
-</figure>
-  <p><b>Quiz your readers.</b> Answers persist, and "Copy results" exports the misses — a follow-up conversation starts from the reader's actual gaps.</p>
-  <section class="quiz" data-quiz="rr-basics">
-  <div class="quiz-head"><svg class="icon"><use href="#i-puzzle"/></svg> Two questions about rr</div>
-  <div class="q" data-q data-qtext="Where does the CSS in a built document come from?">
-  <p class="qt">Where does the CSS in a built document come from?</p>
-  <button type="button" class="choice" data-correct="">A stylesheet CDN</button>
-      <button type="button" class="choice" data-correct="1">Only the components the document actually uses</button>
-      <button type="button" class="choice" data-correct="">A global stylesheet copied into every file</button>
-      <div class="why" hidden><b>Why.</b> Each component carries its own scoped CSS and JS; the build inlines just the ones your tags touch. Small pages stay small.</div>
-</div>
-    <div class="q" data-q data-qtext="What happens if a document passes a prop a component doesn't have?">
-  <p class="qt">What happens if a document passes a prop a component doesn't have?</p>
-  <button type="button" class="choice" data-correct="">It's silently ignored</button>
-      <button type="button" class="choice" data-correct="1">The build fails and lists the valid props</button>
-      <div class="why" hidden><b>Why.</b> Every mistake is a loud, named error — that's what keeps generated documents from quietly drifting off-design.</div>
-</div>
-  <div class="quiz-foot">
-    <span class="score" data-quiz-score></span>
-    <span class="grow"></span>
-    <button type="button" data-quiz-copy>Copy results</button>
-    <button type="button" data-quiz-reset>Reset</button>
-  </div>
-</section>
-</section>
-
-<section id="library">
-  <h2><svg class="icon"><use href="#i-folder"/></svg> The library, in the flesh</h2>
-  <p>Status, flows, verdicts, checklists, stages, sliders — <a href="https://github.com/hhushhas/rr#components">full reference on GitHub</a>. A few, live:</p>
-  <div class="journey">
-  <span class="stop ">write .rr.html</span><span class="sep"><svg class="icon"><use href="#i-arrow-right"/></svg></span><span class="stop new">rr build</span><span class="sep"><svg class="icon"><use href="#i-arrow-right"/></svg></span><span class="stop ">one file, shipped</span>
-</div>
-  <ol class="phases">
-  <li class="done">Author<span class="caption">a few tags</span></li>
-    <li class="done">Build<span class="caption">~10 ms</span></li>
-    <li class="now">Read<span class="caption">from disk</span></li>
-    <li class="">Annotate<span class="caption">notes flow back</span></li>
-</ol>
-  <div class="scorecard">
-  <div class="row head"><span>Promised (spec)</span><span>Delivered (debrief)</span><span>Verdict</span></div>
-  <div class="row"><span>Zero runtime dependencies</span><span>Pure Node; shiki optional, build-time only</span><span class="badge green">kept</span></div>
-    <div class="row"><span>Works offline, forever</span><span>No requests — the file is the app</span><span class="badge green">kept</span></div>
-    <div class="row"><span>Decks / slides format</span><span>Documents only, for now</span><span class="badge amber">planned</span></div>
-</div>
-  <div class="card checklist-card">
-  <p class="checklist-title">Every build ships</p>
-  <ul class="checklist">
-    <li class="done"><svg class="icon"><use href="#i-check"/></svg> Warm light and charcoal dark themes</li>
-    <li class="done"><svg class="icon"><use href="#i-check"/></svg> Tree-shaken inline icon sprite</li>
-    <li class="done"><svg class="icon"><use href="#i-check"/></svg> Hover definitions, keyboard-focusable</li>
-    <li class="todo"><span class="cbox"></span> Your document — <code>rr init report</code></li>
-  </ul>
-</div>
-</section>
-
-<p class="foot">Built with rr, obviously — <a href="https://github.com/hhushhas/rr/blob/main/site/index.rr.html">view this page's source</a> · <a href="/demo">full component demo</a> · <a href="https://github.com/hhushhas/rr">GitHub</a> · MIT © Hasan Shoaib</p>
-
-<script>
-// seams: label each rendered component with the tag that produced it
-(() => {
-  const SPEC = [
-    [".callout", "rr-callout"], [".tiles", "rr-tiles"], [".panes", "rr-panes"],
-    [".journey", "rr-journey"], ["ol.phases", "rr-phases"], [".scorecard", "rr-scorecard"],
-    ["ul.checklist", "rr-checklist"], [".progress-row", "rr-progress"],
-    [".quiz", "rr-quiz"], [".rr-code", "rr-code"],
-  ];
-  for (const [sel, tag] of SPEC)
-    document.querySelectorAll(sel).forEach((el) => {
-      el.classList.add("specimen");
-      const s = document.createElement("span");
-      s.className = "seam";
-      s.textContent = "<" + tag + ">";
-      el.appendChild(s);
-    });
-
-  const nav = document.querySelector("nav.toc");
-  nav.querySelector('a[href="#top"]').outerHTML =
-    '<span class="brand">rr</span><span class="caption">v0.2.0</span><span class="grow"></span>';
-  const btn = document.createElement("button");
-  btn.type = "button";
-  btn.textContent = "seams";
-  btn.setAttribute("aria-pressed", "true");
-  btn.addEventListener("click", () => {
-    const off = document.body.classList.toggle("seams-off");
-    btn.setAttribute("aria-pressed", String(!off));
-  });
-  nav.append(btn);
-
-  document.getElementById("copy-install").addEventListener("click", async (ev) => {
-    try { await navigator.clipboard.writeText(document.getElementById("install-cmd").textContent); } catch {}
-    ev.target.textContent = "Copied";
-    setTimeout(() => { ev.target.textContent = "Copy"; }, 1500);
-  });
-})();
-</script>
-</main>
-<script>
-(() => {
-  const KEY = "rr-ann:" + location.pathname;
-  const load = () => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch { return {}; } };
-  const store = load();
-  const save = () => localStorage.setItem(KEY, JSON.stringify(store));
-  const blocks = [...document.querySelectorAll("figure[data-code-id]")];
-  if (!blocks.length) return;
-
-  const bar = document.createElement("div");
-  bar.className = "ann-bar";
-  bar.hidden = true;
-  bar.innerHTML = '<button type="button" class="primary" data-ann-copy></button><button type="button" data-ann-clear>Clear</button>';
-  document.body.append(bar);
-  const copyBtn = bar.querySelector("[data-ann-copy]");
-
-  const anns = (b) => (store[b.dataset.codeId] ??= []);
-  const lines = (b) => [...b.querySelectorAll(".line")];
-  const lineNo = (b, el) => Number(b.dataset.start) + lines(b).indexOf(el);
-  const total = () => blocks.reduce((t, b) => t + anns(b).length, 0);
-
-  function render(b) {
-    b.querySelectorAll(".ann-note, .ann-editor").forEach((n) => n.remove());
-    lines(b).forEach((l) => l.classList.remove("annotated", "sel"));
-    const ls = lines(b);
-    for (const a of anns(b).slice().sort((x, y) => x.s - y.s)) {
-      const startIdx = a.s - Number(b.dataset.start);
-      const endIdx = a.e - Number(b.dataset.start);
-      for (let i = startIdx; i <= endIdx && i < ls.length; i++) ls[i].classList.add("annotated");
-      const note = document.createElement("span");
-      note.className = "ann-note";
-      note.innerHTML = `<span class="meta">L${a.s}${a.e > a.s ? "–" + a.e : ""} · click to edit</span>`;
-      note.append(a.text);
-      note.addEventListener("click", () => edit(b, a.s, a.e, a));
-      ls[Math.min(endIdx, ls.length - 1)].after(note);
-    }
-    const n = total();
-    bar.hidden = !n;
-    copyBtn.textContent = `Copy ${n} annotation${n === 1 ? "" : "s"}`;
-  }
-
-  function edit(b, s, e, existing) {
-    document.querySelectorAll(".ann-editor").forEach((x) => x.remove());
-    render(b);
-    const ls = lines(b);
-    const startIdx = s - Number(b.dataset.start);
-    const endIdx = e - Number(b.dataset.start);
-    for (let i = startIdx; i <= endIdx && i < ls.length; i++) ls[i].classList.add("sel");
-    const ed = document.createElement("span");
-    ed.className = "ann-editor";
-    ed.innerHTML = `<textarea placeholder="Note for L${s}${e > s ? "–" + e : ""} — will be copied for the agent"></textarea>
-      <span class="row"><span class="grow"></span>
-      ${existing ? '<button type="button" data-del>Delete</button>' : ""}
-      <button type="button" data-cancel>Cancel</button>
-      <button type="button" class="primary" data-save>Save</button></span>`;
-    const ta = ed.querySelector("textarea");
-    if (existing) ta.value = existing.text;
-    ed.querySelector("[data-save]").addEventListener("click", () => {
-      const text = ta.value.trim();
-      if (existing) existing.text = text || existing.text;
-      else if (text) anns(b).push({ s, e, text });
-      if (existing && !text) drop(b, existing);
-      save(); render(b);
-    });
-    ed.querySelector("[data-cancel]").addEventListener("click", () => render(b));
-    ed.querySelector("[data-del]")?.addEventListener("click", () => { drop(b, existing); save(); render(b); });
-    ta.addEventListener("keydown", (ev) => {
-      if (ev.key === "Enter" && !ev.shiftKey) { ev.preventDefault(); ed.querySelector("[data-save]").click(); }
-      if (ev.key === "Escape") render(b);
-    });
-    ls[Math.min(endIdx, ls.length - 1)].after(ed);
-    ta.focus();
-  }
-
-  const drop = (b, a) => { store[b.dataset.codeId] = anns(b).filter((x) => x !== a); };
-
-  let anchor = null; // { block, line } for shift-click ranges
-  for (const b of blocks)
-    b.addEventListener("click", (ev) => {
-      const l = ev.target.closest(".line");
-      if (!l || ev.target.closest(".ann-note, .ann-editor")) return;
-      const n = lineNo(b, l);
-      if (ev.shiftKey && anchor && anchor.block === b) {
-        edit(b, Math.min(anchor.n, n), Math.max(anchor.n, n));
-      } else {
-        anchor = { block: b, n };
-        edit(b, n, n);
-      }
-    });
-
-  function exportText() {
-    const out = [`Annotations — ${document.title}`];
-    for (const b of blocks) {
-      const ls = lines(b);
-      for (const a of anns(b).slice().sort((x, y) => x.s - y.s)) {
-        out.push("", `${b.dataset.file} L${a.s}${a.e > a.s ? "-" + a.e : ""}:`);
-        for (let i = a.s - Number(b.dataset.start); i <= a.e - Number(b.dataset.start) && i < ls.length; i++)
-          out.push(`> ${ls[i].textContent.replace(/\s+$/, "")}`);
-        out.push(`note: ${a.text}`);
-      }
-    }
-    return out.join("\n");
-  }
-
-  copyBtn.addEventListener("click", async () => {
-    const text = exportText();
-    try { await navigator.clipboard.writeText(text); }
-    catch {
-      const ta = document.createElement("textarea");
-      ta.value = text; document.body.append(ta); ta.select();
-      document.execCommand("copy"); ta.remove();
-    }
-    const prev = copyBtn.textContent;
-    copyBtn.textContent = "Copied — paste to the agent";
-    setTimeout(() => { copyBtn.textContent = prev; }, 1600);
-  });
-  bar.querySelector("[data-ann-clear]").addEventListener("click", () => {
-    for (const b of blocks) store[b.dataset.codeId] = [];
-    save(); blocks.forEach(render);
-  });
-
-  blocks.forEach(render);
-})();
-
-document.querySelectorAll("[data-fullscreen]").forEach((b) =>
-  b.addEventListener("click", () =>
-    document.fullscreenElement
-      ? document.exitFullscreen()
-      : document.querySelector(b.dataset.fullscreen).requestFullscreen()));
-
-document.querySelectorAll("[data-toggle-pressed]").forEach((b) =>
-  b.addEventListener("click", () =>
-    b.setAttribute("aria-pressed", String(b.getAttribute("aria-pressed") !== "true"))));
-
-// spine scroll-spy: one tick per section, a survey-blue dot marks where you are
-(() => {
-  const spine = document.querySelector(".doc-spine");
-  if (!spine) return;
-  const ticks = [...spine.querySelectorAll(".spine-tick")];
-  const map = new Map();      // section element -> tick
-  const targets = [];         // sections in document order
-  for (const t of ticks) {
-    const id = (t.getAttribute("href") || "").replace(/^#/, "");
-    const el = id && document.getElementById(id);
-    if (el) { map.set(el, t); targets.push(el); }
-  }
-  if (!targets.length) return;
-  const visible = new Set();
-  const mark = (cur) => ticks.forEach((t) => t.setAttribute("aria-current", map.get(cur) === t ? "true" : "false"));
-  const io = new IntersectionObserver((entries) => {
-    for (const e of entries) e.isIntersecting ? visible.add(e.target) : visible.delete(e.target);
-    mark(targets.find((t) => visible.has(t)) || targets[0]);
-  }, { rootMargin: "-15% 0px -70% 0px", threshold: 0 });
-  targets.forEach((t) => io.observe(t));
-  ticks.forEach((t) => t.addEventListener("click", () => {
-    const el = document.getElementById((t.getAttribute("href") || "").replace(/^#/, ""));
-    if (el) mark(el);
-  }));
-  mark(targets[0]);
-})();
-
-// terms: definitions surface in the legend panel (wide) or expand inline (narrow/touch)
-(() => {
-  const terms = [...document.querySelectorAll(".term[data-def]")];
-  if (!terms.length) return;
-  const panel = document.createElement("aside");
-  panel.className = "legend-panel"; panel.hidden = true; panel.setAttribute("aria-live", "polite");
-  panel.innerHTML = '<span class="legend-panel-word"></span><span class="legend-panel-def"></span>';
-  document.body.append(panel);
-  const wordEl = panel.querySelector(".legend-panel-word");
-  const defEl = panel.querySelector(".legend-panel-def");
-  const wide = matchMedia("(min-width: 901px) and (pointer: fine)");
-
-  terms.forEach((t) => {
-    const inline = document.createElement("span");
-    inline.className = "term-inline"; inline.hidden = true; inline.textContent = t.dataset.def;
-    t.after(inline);
-    const open = () => { if (!wide.matches) return; wordEl.textContent = t.textContent.trim(); defEl.textContent = t.dataset.def; panel.hidden = false; t.classList.add("term-hot"); };
-    const close = () => { if (!wide.matches) return; panel.hidden = true; t.classList.remove("term-hot"); };
-    const toggle = () => {
-      if (wide.matches) return;
-      const openNow = inline.hidden;
-      inline.hidden = !openNow;
-      t.classList.toggle("term-hot", openNow);
-      t.setAttribute("aria-expanded", String(openNow));
-    };
-    t.addEventListener("mouseenter", open);
-    t.addEventListener("mouseleave", close);
-    t.addEventListener("focus", open);
-    t.addEventListener("blur", close);
-    t.addEventListener("click", toggle);
-    t.addEventListener("keydown", (e) => { if ((e.key === "Enter" || e.key === " ") && !wide.matches) { e.preventDefault(); toggle(); } });
-  });
-})();
-
-// recall — flip cards, self-marking, per-document persistence
-(() => {
-  const KEY = "rr-recall:" + location.pathname;
-  const load = () => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch { return {}; } };
-  const store = load();
-  const save = () => localStorage.setItem(KEY, JSON.stringify(store));
-
-  document.querySelectorAll("[data-recall]").forEach((set) => {
-    const results = (store[set.dataset.recall] ??= {});
-    const cards = [...set.querySelectorAll("[data-recall-card]")];
-
-    const score = () => {
-      const done = Object.keys(results).length;
-      const got = Object.values(results).filter((r) => r.got).length;
-      set.querySelector("[data-recall-score]").textContent =
-        done ? `${got}/${cards.length} got · ${done}/${cards.length} marked` : "";
-    };
-
-    cards.forEach((card, idx) => {
-      const n = String(idx + 1).padStart(2, "0");
-      card.querySelectorAll("[data-recall-no]").forEach((e) => (e.textContent = n));
-      const flip = card.querySelector(".recall-flip");
-      const mark = card.querySelector(".recall-mark");
-      const q = card.querySelector(".recall-q")?.textContent.trim() || `Card ${idx + 1}`;
-      const setFlipped = (on) => {
-        card.dataset.flipped = String(on);
-        flip.setAttribute("aria-pressed", String(on));
-        mark.hidden = !on;
-      };
-      flip.addEventListener("click", () => setFlipped(card.dataset.flipped !== "true"));
-      const record = (v) => { card.dataset.mark = v; results[idx] = { q, got: v === "got" }; save(); score(); };
-      card.querySelector("[data-recall-got]").addEventListener("click", () => record("got"));
-      card.querySelector("[data-recall-miss]").addEventListener("click", () => record("miss"));
-      const saved = results[idx];
-      if (saved) { setFlipped(true); card.dataset.mark = saved.got ? "got" : "miss"; }
-    });
-    score();
-
-    set.querySelector("[data-recall-copy]").addEventListener("click", async (ev) => {
-      const missed = Object.values(results).filter((r) => !r.got).map((r) => r.q);
-      const text = missed.length
-        ? [`Recall — missed cards (${document.title}):`, ...missed.map((m) => `- ${m}`)].join("\n")
-        : `Recall — no missed cards in ${document.title}`;
-      try { await navigator.clipboard.writeText(text); }
-      catch { const ta = document.createElement("textarea"); ta.value = text; document.body.append(ta); ta.select(); document.execCommand("copy"); ta.remove(); }
-      const b = ev.currentTarget, prev = b.textContent;
-      b.textContent = "Copied — paste to the agent";
-      setTimeout(() => { b.textContent = prev; }, 1600);
-    });
-    set.querySelector("[data-recall-reset]").addEventListener("click", () => {
-      store[set.dataset.recall] = {}; save(); location.reload();
-    });
-  });
-})();
-
-// quiz — multiple choice, per-document persistence
-(() => {
-  const KEY = "rr-quiz:" + location.pathname;
-  const load = () => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch { return {}; } };
-  const store = load();
-  const save = () => localStorage.setItem(KEY, JSON.stringify(store));
-
-  document.querySelectorAll("[data-quiz]").forEach((quiz) => {
-    const results = (store[quiz.dataset.quiz] ??= {});
-    const questions = [...quiz.querySelectorAll("[data-q]")];
-
-    const answer = (q, btn, persist) => {
-      const i = questions.indexOf(q);
-      q.classList.add("answered");
-      q.querySelectorAll(".choice").forEach((c) => { if (c.dataset.correct) c.classList.add("is-correct"); });
-      btn.classList.add(btn.dataset.correct ? "picked-right" : "picked-wrong");
-      const why = q.querySelector(".why");
-      if (why) why.hidden = false;
-      if (persist) { results[i] = { chose: btn.textContent.trim(), right: !!btn.dataset.correct }; save(); }
-      score();
-    };
-
-    const score = () => {
-      const done = Object.keys(results).length;
-      const right = Object.values(results).filter((r) => r.right).length;
-      quiz.querySelector("[data-quiz-score]").textContent =
-        done ? `${right}/${questions.length} right · ${done}/${questions.length} answered` : "";
-    };
-
-    questions.forEach((q, i) => {
-      q.querySelectorAll(".choice").forEach((btn) =>
-        btn.addEventListener("click", () => { if (!q.classList.contains("answered")) answer(q, btn, true); }));
-      const saved = results[i];
-      if (saved) {
-        const btn = [...q.querySelectorAll(".choice")].find((c) => c.textContent.trim() === saved.chose);
-        if (btn) answer(q, btn, false);
-      }
-    });
-    score();
-
-    quiz.querySelector("[data-quiz-copy]").addEventListener("click", async (ev) => {
-      const right = Object.values(results).filter((r) => r.right).length;
-      const out = [`Quiz results — ${document.title}: ${right}/${questions.length}`];
-      questions.forEach((q, i) => {
-        const r = results[i];
-        if (!r) { out.push(`— Q${i + 1} "${q.dataset.qtext}" — unanswered`); return; }
-        if (r.right) { out.push(`✓ Q${i + 1} "${q.dataset.qtext}"`); return; }
-        const correct = [...q.querySelectorAll(".choice")].find((c) => c.dataset.correct)?.textContent.trim();
-        out.push(`✗ Q${i + 1} "${q.dataset.qtext}" — chose "${r.chose}", correct: "${correct}"`);
-      });
-      const text = out.join("\n");
-      try { await navigator.clipboard.writeText(text); }
-      catch { const ta = document.createElement("textarea"); ta.value = text; document.body.append(ta); ta.select(); document.execCommand("copy"); ta.remove(); }
-      const b = ev.currentTarget, prev = b.textContent;
-      b.textContent = "Copied — paste to the agent";
-      setTimeout(() => { b.textContent = prev; }, 1600);
-    });
-
-    quiz.querySelector("[data-quiz-reset]").addEventListener("click", () => {
-      store[quiz.dataset.quiz] = {}; save(); location.reload();
-    });
-  });
-})();
-</script>
 </body>
 </html>

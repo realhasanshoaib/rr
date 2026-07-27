@@ -5,7 +5,7 @@
 
 <style>
 .rr-code { margin: var(--s2) 0; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
-.rr-code figcaption { display: flex; align-items: center; gap: var(--s1); padding: var(--s1) var(--s2); background: var(--surface); border-bottom: 1px solid var(--line); font: 500 var(--t-chrome)/1.4 var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.rr-code figcaption { display: flex; align-items: center; gap: var(--s1); padding: var(--s1) var(--s2); background: var(--surface); border-bottom: 1px solid var(--line); font: 500 var(--t-chrome)/1.4 var(--label); color: var(--muted); text-transform: var(--label-case); letter-spacing: var(--label-track); }
 .rr-code figcaption code { background: none; border: 0; padding: 0; text-transform: none; }
 .rr-code figcaption .grow { flex: 1; }
 .rr-code figcaption .hint { text-transform: none; letter-spacing: 0; opacity: .8; }
@@ -25,7 +25,7 @@
   font: 400 var(--t-support)/1.5 var(--text);
 }
 .rr-code .ann-note { cursor: pointer; }
-.rr-code .ann-note .meta { color: var(--muted); font: 500 var(--t-chrome)/1.4 var(--mono); text-transform: uppercase; letter-spacing: .04em; display: block; margin-bottom: .15rem; }
+.rr-code .ann-note .meta { color: var(--muted); font: 500 var(--t-chrome)/1.4 var(--label); text-transform: var(--label-case); letter-spacing: var(--label-track); display: block; margin-bottom: .15rem; }
 .rr-code .ann-editor textarea { width: 100%; min-height: 3.2em; resize: vertical; font: inherit; color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: var(--s1) var(--s2); }
 .rr-code .ann-editor .row { display: flex; gap: var(--s1); margin-top: .4rem; align-items: center; }
 .rr-code .ann-editor .row .grow { flex: 1; }

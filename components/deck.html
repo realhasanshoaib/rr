@@ -58,8 +58,8 @@ body:has(.deck.is-play) main { display: block; padding: 0; }
 }
 .deck .slide > * { grid-column: 2; min-width: 0; }
 .deck .slide > .wide { grid-column: 1 / -1; width: min(1080px, 100%); justify-self: center; }
-.deck .slide h1 { font: 600 44px/1.15 var(--text); letter-spacing: -.015em; margin: 0 0 var(--s2); }
-.deck .slide h2, .deck .slide .slide-title { font: 600 30px/1.2 var(--text); letter-spacing: -.012em; margin: 0; border-bottom: 0; padding: 0; }
+.deck .slide h1 { font: 600 44px/1.15 var(--text); margin: 0 0 var(--s2); }
+.deck .slide h2, .deck .slide .slide-title { font: 600 30px/1.2 var(--text); margin: 0; border-bottom: 0; padding: 0; }
 .slide-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: var(--s1) var(--s2); margin-bottom: var(--s2); }
 .slide-head .slide-kicker { margin-left: auto; }
 .slide-title:empty, .slide-kicker:empty { display: none; }
@@ -73,7 +73,7 @@ body:has(.deck.is-play) main { display: block; padding: 0; }
 .spine-sub i { width: 7px; height: 2px; background: var(--line); }
 .spine-sub i.on { background: var(--accent); }
 .spine-sub i.now { width: 11px; }
-.corner { position: fixed; top: 14px; right: var(--s2); z-index: 20; font: 600 var(--t-chrome)/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.corner { position: fixed; top: 14px; right: var(--s2); z-index: 20; font: 600 var(--t-chrome)/1 var(--label); letter-spacing: var(--label-track); text-transform: var(--label-case); color: var(--muted); }
 
 /* the HUD ----------------------------------------------------------------- */
 .deck .hud {
@@ -81,10 +81,10 @@ body:has(.deck.is-play) main { display: block; padding: 0; }
   padding: 7px var(--s2); border-top: 1px solid var(--line);
   background: color-mix(in srgb, var(--bg) 90%, transparent); backdrop-filter: blur(8px);
 }
-.hud-btn { font: 500 var(--t-chrome)/1 var(--mono); color: var(--muted); border: 1px solid var(--line); border-radius: var(--radius); padding: 6px 12px; background: var(--bg); }
+.hud-btn { font: 500 var(--t-chrome)/1 var(--label); color: var(--muted); border: 1px solid var(--line); border-radius: var(--radius); padding: 6px 12px; background: var(--bg); }
 .hud-btn:hover { color: var(--fg); border-color: var(--muted); }
 .hud-btn[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); }
-.hud-hint { font: 400 var(--t-chrome)/1 var(--mono); color: var(--muted); }
+.hud-hint { font: 400 var(--t-chrome)/1 var(--label); color: var(--muted); }
 .hud-bar { flex: 1; min-width: 60px; height: 2px; background: var(--line); }
 .hud-bar > i { display: block; height: 100%; width: 0; background: var(--accent); }
 .hud-count { font: 500 var(--t-chrome)/1 var(--mono); letter-spacing: .06em; color: var(--muted); }
@@ -98,7 +98,7 @@ body:has(.deck.is-play) main { display: block; padding: 0; }
 /* steps — ghost waypoints: coordinate visible, body earned, space reserved -- */
 .deck .step { display: grid; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); padding: var(--s2) var(--s3); margin: var(--s2) 0; }
 .deck .step-body { min-width: 0; }
-.deck .step-wp { display: block; margin-top: var(--s2); font: 500 var(--t-support)/1.4 var(--mono); letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+.deck .step-wp { display: block; margin-top: var(--s2); font: 500 var(--t-support)/1.4 var(--label); letter-spacing: var(--label-track); text-transform: var(--label-case); color: var(--muted); }
 .deck.is-play .step .step-body { visibility: hidden; }
 .deck.is-play .step.is-shown .step-body { visibility: visible; }
 .deck.is-play .step:not(.is-shown) { border-style: dashed; background: transparent; }
@@ -133,6 +133,12 @@ body:has(.deck.is-play) main { display: block; padding: 0; }
   .deck .step .step-body, .deck .step .step-wp { transition: color .15s ease-out; }
   .hud-bar > i { transition: width .15s ease; }
 }
+</style>
+
+<style theme>
+.deck .slide h1 { letter-spacing: -.015em; }
+.deck .slide h2, .deck .slide .slide-title { letter-spacing: -.012em; }
+.corner { letter-spacing: .08em; }
 </style>
 
 <script>

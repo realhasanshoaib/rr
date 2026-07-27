@@ -74,7 +74,7 @@
 <style>
 /* recall — flip cards -------------------------------------------------------*/
 .recall-set { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: var(--s2) var(--s3); margin: var(--s3) 0; }
-.recall-head { display: flex; align-items: center; gap: var(--s1); font: 600 var(--t-sub)/1.3 var(--mono); letter-spacing: .02em; color: var(--fg); margin-bottom: var(--s2); }
+.recall-head { display: flex; align-items: center; gap: var(--s1); font: 600 var(--t-sub)/1.3 var(--label); letter-spacing: var(--label-track); color: var(--fg); margin-bottom: var(--s2); }
 .recall-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: var(--s2); }
 .recall { display: flex; flex-direction: column; }
 .recall-flip { display: grid; width: 100%; text-align: left; background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius); padding: var(--s2) var(--s3); cursor: pointer; }
@@ -86,12 +86,12 @@
 .recall[data-flipped="true"] .recall-face.back { visibility: visible; opacity: 1; }
 .recall-q, .recall-a { display: block; font: 600 var(--t-body)/1.5 var(--text); }
 .recall-why { display: block; font-size: var(--t-support); line-height: 1.55; color: var(--muted); margin-top: var(--s1); }
-.recall-cue { display: block; margin-top: var(--s2); font: 500 var(--t-support)/1.4 var(--mono); letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+.recall-cue { display: block; margin-top: var(--s2); font: 500 var(--t-support)/1.4 var(--label); letter-spacing: var(--label-track); text-transform: var(--label-case); color: var(--muted); }
 .recall-mark { display: flex; align-items: center; gap: var(--s1); margin-top: var(--s1); }
 .recall-mark[hidden] { display: none; }
-.recall-tag { font: 500 var(--t-support)/1.4 var(--mono); letter-spacing: .05em; text-transform: uppercase; color: var(--accent); }
+.recall-tag { font: 500 var(--t-support)/1.4 var(--label); letter-spacing: var(--label-track); text-transform: var(--label-case); color: var(--accent); }
 .recall-mark .grow { flex: 1; }
-.recall-self { font: 500 var(--t-chrome)/1 var(--mono); color: var(--muted); border: 1px solid var(--line); border-radius: var(--radius); padding: 6px 10px; background: var(--bg); text-transform: uppercase; letter-spacing: .05em; }
+.recall-self { font: 500 var(--t-chrome)/1 var(--label); color: var(--muted); border: 1px solid var(--line); border-radius: var(--radius); padding: 6px 10px; background: var(--bg); text-transform: var(--label-case); letter-spacing: var(--label-track); }
 .recall-self:hover { color: var(--fg); border-color: var(--muted); }
 .recall[data-mark="got"] [data-recall-got] { color: var(--green); border-color: var(--green); }
 .recall[data-mark="miss"] [data-recall-miss] { color: var(--red); border-color: var(--red); }
@@ -101,7 +101,7 @@
 
 /* quiz — multiple choice ----------------------------------------------------*/
 .quiz { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: var(--s2) var(--s3); margin: var(--s3) 0; }
-.quiz-head { display: flex; align-items: center; gap: var(--s1); font: 600 var(--t-sub)/1.3 var(--mono); letter-spacing: .02em; color: var(--fg); margin-bottom: var(--s1); }
+.quiz-head { display: flex; align-items: center; gap: var(--s1); font: 600 var(--t-sub)/1.3 var(--label); letter-spacing: var(--label-track); color: var(--fg); margin-bottom: var(--s1); }
 .quiz .q { padding: var(--s1) 0; }
 .quiz .q + .q { border-top: 1px solid var(--line); }
 .quiz .qt { font: 600 var(--t-body)/1.5 var(--text); margin: .25rem 0 var(--s1); }

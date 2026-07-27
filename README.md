@@ -1,10 +1,12 @@
 # rr
 
-A zero-dependency Node build system for composable HTML documents. You write a small `.rr.html` file of `<rr-*>` tags; `rr build` expands them into one polished, self-contained HTML file — canonical CSS, a tree-shaken icon sprite, and both light/dark themes — that opens straight from disk with no dependencies, no bundler, and no network.
+A zero-dependency Node build system for composable HTML documents. You write a small `.rr.html` file of `<rr-*>` tags; `rr build` expands them into one self-contained HTML file — structural CSS, a tree-shaken icon sprite, light/dark aware — that opens straight from disk with no dependencies, no bundler, and no network.
+
+rr does not impose a design system. Components ship their structure and behavior plus a small neutral token contract; you restyle everything by redefining the tokens (`--css your.css`), or opt into the bundled look with `--theme rr`.
 
 ## Why
 
-Most "quick documents" — specs, briefs, reports, changelogs, debriefs — either look like raw markdown or cost an afternoon of hand-written CSS. `rr` gives you a small library of considered, accessible components (cards, callouts, checklists, scorecards, timelines, interactive mini-worlds) so an agent or a human composes a document out of proven pieces instead of reinventing a design system every time. The build fails loudly on unknown components, missing props, and unknown icons — so a composed document is correct by construction, and the output is a single file you can email, commit, or host anywhere.
+Most "quick documents" — specs, briefs, reports, changelogs, debriefs — either look like raw markdown or cost an afternoon of hand-written CSS. `rr` gives you a small library of considered, accessible components (cards, callouts, checklists, scorecards, timelines, interactive mini-worlds) so an agent or a human composes a document out of proven pieces. The build fails loudly on unknown components, missing props, and unknown icons — so a composed document is correct by construction, and the output is a single file you can email, commit, or host anywhere.
 
 ## Install
 
@@ -28,10 +30,12 @@ rr build report.rr.html # emits report.html beside it
 
 ```
 created /path/report.rr.html
-next: rr build report.rr.html
+next: rr build report.rr.html            # your CSS via tokens or --css
+      rr build report.rr.html --theme rr # the bundled look
 built /path/report.html
   components from: doc.html, status.html, surfaces.html
   icons inlined: bolt, check, clock, doc, warning
+  theme: none (structural CSS + neutral tokens — bring your own, or pass --theme rr)
 ```
 
 Open `report.html` in any browser — everything is inlined.
@@ -39,12 +43,31 @@ Open `report.html` in any browser — everything is inlined.
 ## Commands
 
 ```bash
-rr build <doc.rr.html> [-o out.html]   # expand components → one self-contained .html
+rr build <doc.rr.html> [-o out.html] [--theme rr] [--css file.css]
+                                        # expand components → one self-contained .html
 rr init <name>                          # scaffold a starter <name>.rr.html
 rr --help | --version
 ```
 
 By default `build` writes `<doc>.html` next to the source; pass `-o` to choose the path.
+
+## Styling — bring your own design system
+
+The default output carries only structural CSS (layout, interaction states, mechanics) written against a small set of CSS custom properties, with neutral system-font light/dark defaults. To make documents look like *your* product, redefine the tokens — no component CSS to fight:
+
+```css
+/* brand.css — inlined into the output with: rr build report.rr.html --css brand.css */
+:root {
+  --bg: #0a0a0a; --surface: #141414; --line: #262626;
+  --fg: #ededed; --muted: #a1a1a1; --accent: #ff5d1f;
+  --text: "Inter", system-ui, sans-serif;
+  --label: var(--mono); --label-case: uppercase; --label-track: .05em;
+}
+```
+
+The contract: surfaces (`--bg --surface --line`), ink (`--fg --muted`), semantics (`--accent --amber --green --red`), rhythm (`--s1`…`--s8`), type scale (`--t-display --t-section --t-sub --t-body --t-support --t-chrome`), voices (`--text --mono`), chrome labels (`--label --label-case --label-track`), and `--radius`. Anything deeper is plain CSS on stable class names — read the output, it's yours.
+
+`--theme rr` inlines the bundled theme (see [Conventions](#the-bundled-theme---theme-rr)) after the structural layer instead.
 
 ## Authoring
 
@@ -157,9 +180,9 @@ A reader-paced slide format. Put one `rr-deck` directly inside `rr-doc` (no `rr-
 
 Chunk *inside* a slide and reveal one unit per forward keypress. Two flavors: `rr-step` is a ghost waypoint whose coordinate (`wp="WP 1 · Parse"`) shows from the start while its body stays hidden with space reserved, so revealing it never reflows the slide — use it when the order of arrival is the lesson. `rr-beat` is a teaching chunk that is fully hidden until revealed, then recedes to context once a later beat lands; `mark="<element-id>"` lights something already on the board. Every state is a deep link, so a reader who walked in late can rewind. See [`demo/demo-deck.rr.html`](demo/demo-deck.rr.html).
 
-### Conventions
+### The bundled theme (`--theme rr`)
 
-This is **Traverse**, a cartographic design system: a chart-paper light theme (`#f4f5f3`) and a night-navigation dark theme (`#1b2023`), one survey-blue accent (`--accent #2456d6`), Avenir Next for the reading voice and SF Mono for the instrument voice (numbers, labels, coordinates). Two type laws hold every block together:
+Opt-in with `rr build … --theme rr`. This is **Traverse**, a cartographic design system: a chart-paper light theme (`#f4f5f3`) and a night-navigation dark theme (`#1b2023`), one survey-blue accent (`--accent #2456d6`), Avenir Next for the reading voice and SF Mono for the instrument voice (numbers, labels, coordinates). Two type laws hold every block together:
 
 - **Law 01 — the descending column.** The first line of any column or card is the largest; sizes only decrease downward. A kind-label rides the title line (right-aligned mono) or sits in the footer — never a small kicker stacked *above* a bigger line.
 - **Law 02 — the floor.** No content text below 16px and no chrome below 13px. The scale is display 34 / section 26 / sub 19 / body 18 / support 16 / chrome 13.
@@ -172,7 +195,7 @@ This is **Traverse**, a cartographic design system: a chart-paper light theme (`
 
 ## How it works
 
-Each file in `components/` declares one or more `<template name="…" props="…">` blocks plus optional file-level `<style>`/`<script>`. `rr build` resolves `<rr-*>` tags inside-out (so components nest), substitutes props and `<slot/>`, and then inlines **only** the CSS, JS, and icon symbols the document actually references. The result is a single HTML file with zero external requests.
+Each file in `components/` declares one or more `<template name="…" props="…">` blocks plus optional file-level `<style>` (structural), `<style theme>` (the bundled look, included only with `--theme rr`), and `<script>`. `rr build` resolves `<rr-*>` tags inside-out (so components nest), substitutes props and `<slot/>`, and then inlines **only** the CSS, JS, and icon symbols the document actually references — structure first, then the theme (if requested), then your `--css` file last so it always wins. The result is a single HTML file with zero external requests.
 
 ## License
 
