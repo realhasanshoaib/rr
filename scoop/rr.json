@@ -1,11 +1,11 @@
 {
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "A zero-dependency Node build system for composable HTML documents.",
   "homepage": "https://rr.hasanshoaib.com",
   "license": "MIT",
-  "url": "https://github.com/hhushhas/rr/archive/refs/tags/v0.3.0.tar.gz",
-  "hash": "2166c040d51d0d3bef351dfb2f76570f5542c66302dc6b6fe796dbdba7c06fbe",
-  "extract_dir": "rr-0.3.0",
+  "url": "https://github.com/hhushhas/rr/archive/refs/tags/v0.3.1.tar.gz",
+  "hash": "acf78051ff1ccfee588c72477c5d77448f2c91807dd60763ee4d4a8962762a85",
+  "extract_dir": "rr-0.3.1",
   "depends": "nodejs-lts",
   "bin": "bin\\rr.cmd",
   "checkver": {
