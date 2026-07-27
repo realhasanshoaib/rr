@@ -1,12 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
-  <rect width="1200" height="630" fill="#191919"/>
+  <rect width="1200" height="630" fill="#12100c"/>
   <g transform="translate(96 210)">
-    <rect x="0" y="0" width="210" height="210" rx="46" fill="none" stroke="#529cca" stroke-width="14"/>
-    <rect x="40" y="46" width="130" height="30" rx="11" fill="#529cca" opacity="0.35"/>
-    <rect x="40" y="92" width="130" height="30" rx="11" fill="#529cca"/>
-    <rect x="40" y="138" width="82" height="30" rx="11" fill="#529cca" opacity="0.35"/>
+    <rect x="0" y="0" width="210" height="210" rx="46" fill="none" stroke="#c9ab84" stroke-width="14"/>
+    <rect x="40" y="46" width="130" height="30" rx="11" fill="#c9ab84" opacity="0.35"/>
+    <rect x="40" y="92" width="130" height="30" rx="11" fill="#c9ab84"/>
+    <rect x="40" y="138" width="82" height="30" rx="11" fill="#c9ab84" opacity="0.35"/>
   </g>
-  <text x="380" y="285" font-family="ui-sans-serif, -apple-system, Helvetica, Arial, sans-serif" font-size="132" font-weight="700" fill="#e3e2e0">rr</text>
-  <text x="382" y="360" font-family="ui-sans-serif, -apple-system, Helvetica, Arial, sans-serif" font-size="34" font-weight="500" fill="#9b9b9b">A build system for composable HTML documents</text>
-  <text x="382" y="418" font-family="ui-monospace, SF Mono, Menlo, monospace" font-size="26" fill="#529cca">npm install -g rr-html</text>
+  <text x="380" y="285" font-family="ui-sans-serif, -apple-system, Helvetica, Arial, sans-serif" font-size="132" font-weight="700" fill="#ededed">rr</text>
+  <text x="382" y="360" font-family="ui-sans-serif, -apple-system, Helvetica, Arial, sans-serif" font-size="29" font-weight="500" fill="#a1a1a1">Modular HTML — React's component model, no React</text>
+  <text x="382" y="418" font-family="ui-monospace, SF Mono, Menlo, monospace" font-size="26" fill="#c9ab84">npm install -g rr-html</text>
 </svg>

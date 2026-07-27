@@ -3,19 +3,19 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>rr — compose HTML documents from components</title>
-  <meta name="description" content="rr expands a small file of <rr-*> tags into one polished, self-contained HTML page. Zero-dependency Node CLI. Your design system, not ours." />
+  <title>rr — modular HTML</title>
+  <meta name="description" content="Build HTML from reusable components. No framework, no JS, no bundler — everything stays plain HTML, one rr build away." />
   <link rel="canonical" href="https://rr.hasanshoaib.com/" />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="icon" href="/favicon.png" sizes="512x512" type="image/png" />
   <meta property="og:type" content="website" />
-  <meta property="og:title" content="rr — compose HTML documents from components" />
-  <meta property="og:description" content="A small file of <rr-*> tags becomes one polished, self-contained HTML page. Zero dependencies. Your design system, not ours." />
+  <meta property="og:title" content="rr — modular HTML" />
+  <meta property="og:description" content="Build HTML from reusable components. No framework, no JS, no bundler — one rr build away." />
   <meta property="og:url" content="https://rr.hasanshoaib.com/" />
   <meta property="og:image" content="https://rr.hasanshoaib.com/og.png" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="rr — compose HTML documents from components" />
-  <meta name="twitter:description" content="A small file of <rr-*> tags becomes one polished, self-contained HTML page. Zero dependencies. Your design system, not ours." />
+  <meta name="twitter:title" content="rr — modular HTML" />
+  <meta name="twitter:description" content="Build HTML from reusable components. No framework, no JS, no bundler — one rr build away." />
   <meta name="twitter:image" content="https://rr.hasanshoaib.com/og.png" />
   <script type="application/ld+json">
   {
@@ -51,6 +51,18 @@
       line-height: 1.6;
       font-size: 15px;
       -webkit-font-smoothing: antialiased;
+    }
+    #bg {
+      position: fixed; inset: -7%; z-index: -1;
+      pointer-events: none; will-change: transform;
+    }
+    #bg svg { width: 100%; height: 100%; display: block; animation: drift 90s ease-in-out infinite alternate; }
+    @keyframes drift {
+      from { transform: translate(0, 0) scale(1); }
+      to { transform: translate(1.2%, -0.8%) scale(1.03); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      #bg svg { animation: none; }
     }
     .wrap { max-width: 680px; margin: 0 auto; padding: 0 24px; }
     a { color: var(--fg); text-decoration: none; }
@@ -126,6 +138,21 @@
   </style>
 </head>
 <body>
+  <div id="bg" aria-hidden="true">
+    <svg preserveAspectRatio="none">
+      <filter id="wash" x="0" y="0" width="100%" height="100%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.0028 0.0045" numOctaves="3" seed="11" />
+        <feColorMatrix type="matrix" values="0 0 0 0 0.13  0 0 0 0 0.10  0 0 0 0 0.07  0.5 0.5 0.5 0 -0.55" />
+        <feGaussianBlur stdDeviation="10" />
+      </filter>
+      <filter id="grain" x="0" y="0" width="100%" height="100%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.7" numOctaves="2" seed="3" />
+        <feColorMatrix type="matrix" values="0 0 0 0 0.8  0 0 0 0 0.7  0 0 0 0 0.6  0 0 0 0.015 0" />
+      </filter>
+      <rect width="100%" height="100%" filter="url(#wash)" />
+      <rect width="100%" height="100%" filter="url(#grain)" />
+    </svg>
+  </div>
   <div class="wrap">
     <nav>
       <span class="logo"><img src="/logo.svg" alt="" /> rr</span>
@@ -137,8 +164,8 @@
     </nav>
 
     <header>
-      <h1>Compose documents.<br />Ship one file.</h1>
-      <p class="tagline">rr expands a small file of <code class="inline">&lt;rr-*&gt;</code> tags into a polished, self-contained HTML page — specs, reports, briefs, decks. No framework, no bundler, no network requests.</p>
+      <h1>Modular HTML.<br />React's component model — no React.</h1>
+      <p class="tagline">rr lets you build HTML from reusable components. No framework, no JS, no bundler — everything stays plain HTML, one <code class="inline">rr build</code> away.</p>
       <div class="cta">
         <a class="btn primary" href="#install">Install</a>
         <a class="btn ghost" href="https://github.com/hhushhas/rr" rel="noopener">GitHub</a>
@@ -157,53 +184,10 @@
     </header>
 
     <section>
-      <p class="label">The problem</p>
+      <p class="label">Why</p>
       <div class="features">
         <div class="feature">
-          <h3>Quick documents cost an afternoon</h3>
-          <p>A spec, report, or debrief either looks like raw markdown or costs hours of hand-written CSS.</p>
-        </div>
-        <div class="feature">
-          <h3>Hand-written HTML drifts</h3>
-          <p>Ask an agent for an HTML document and it invents a new design every time — boilerplate that drifts, for a lot of tokens.</p>
-        </div>
-        <div class="feature">
-          <h3>Builds don't travel</h3>
-          <p>Anything with a bundler or a CDN can't be emailed, committed, or opened from disk without setup.</p>
-        </div>
-      </div>
-    </section>
-
-    <section>
-      <p class="label">The fix</p>
-      <div class="features">
-        <div class="feature">
-          <h3>A small vocabulary</h3>
-          <p>Thirty-odd tags — cards, callouts, checklists, annotatable code exhibits, flip cards, reader-paced decks. Compose out of proven pieces instead of designing from scratch.</p>
-        </div>
-        <div class="feature">
-          <h3>Correct by construction</h3>
-          <p>Unknown tag, missing prop, bad icon name — the build stops and names the fix. A composed document can't quietly rot.</p>
-        </div>
-        <div class="feature">
-          <h3>One file out</h3>
-          <p>Everything the page uses is inlined; everything it doesn't is left out. The output makes zero network requests.</p>
-        </div>
-      </div>
-    </section>
-
-    <section>
-      <p class="label">Your design system, not ours</p>
-      <div class="features">
-        <div class="feature">
-          <h3>No bundled look by default</h3>
-          <p>rr ships structural CSS and a neutral token contract — nothing more. Redefine the tokens and every component wears your brand. Want the bundled look instead? Pass <code class="inline">--theme rr</code>.</p>
-          <p class="filecap" style="margin-top:16px">brand.css</p>
-<pre data-lang="css"><code>:root {
-  --bg: #0a0a0a; --surface: #141414; --line: #262626;
-  --fg: #ededed; --muted: #a1a1a1; --accent: #ff5d1f;
-  --text: "Inter", system-ui, sans-serif;
-}</code></pre>
+          <p>HTML is the go-to format for one-off artifacts — reports, specs, visualizations, little apps. But a finished page is one giant file: every edit, by you or an AI agent, means reading and rewriting the whole thing. rr keeps the source small and componentized, so iteration stays fast and cheap — the big file only exists as output.</p>
         </div>
       </div>
     </section>
@@ -214,11 +198,8 @@
 rr init report
 rr build report.rr.html
 
-# your design system, inlined last so it wins
-rr build report.rr.html --css brand.css
-
-# or the bundled theme
-rr build report.rr.html --theme rr</code></pre>
+# link your own css, inlined last so it wins
+rr build report.rr.html --css brand.css</code></pre>
     </section>
 
     <section id="install">
@@ -237,5 +218,23 @@ scoop install https://raw.githubusercontent.com/hhushhas/rr/main/scoop/rr.json</
       rr &middot; <a href="https://github.com/hhushhas/rr" rel="noopener">GitHub</a> &middot; <a href="https://github.com/hhushhas/rr/releases" rel="noopener">Releases</a> &middot; <a href="/demo">Demo</a> &middot; by <a href="https://hasanshoaib.com" rel="noopener">Hasan Shoaib</a>
     </footer>
   </div>
+  <script>
+    (() => {
+      if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      const bg = document.getElementById("bg");
+      let tx = 0, ty = 0, x = 0, y = 0, raf = null;
+      const step = () => {
+        x += (tx - x) * 0.05;
+        y += (ty - y) * 0.05;
+        bg.style.transform = `translate(${x}px, ${y}px)`;
+        raf = Math.abs(tx - x) + Math.abs(ty - y) > 0.1 ? requestAnimationFrame(step) : null;
+      };
+      addEventListener("pointermove", (e) => {
+        tx = (e.clientX / innerWidth - 0.5) * -16;
+        ty = (e.clientY / innerHeight - 0.5) * -12;
+        if (!raf) raf = requestAnimationFrame(step);
+      }, { passive: true });
+    })();
+  </script>
 </body>
 </html>
