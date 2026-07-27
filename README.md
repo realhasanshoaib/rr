@@ -12,7 +12,7 @@ Most "quick documents" — specs, briefs, reports, changelogs, debriefs — eith
 
 ```bash
 # npm
-npm install -g rr-cli
+npm install -g rr-html
 
 # Homebrew (macOS)
 brew install hhushhas/tap/rr

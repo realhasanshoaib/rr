@@ -8,5 +8,5 @@
   </g>
   <text x="380" y="285" font-family="ui-sans-serif, -apple-system, Helvetica, Arial, sans-serif" font-size="132" font-weight="700" fill="#e3e2e0">rr</text>
   <text x="382" y="360" font-family="ui-sans-serif, -apple-system, Helvetica, Arial, sans-serif" font-size="34" font-weight="500" fill="#9b9b9b">A build system for composable HTML documents</text>
-  <text x="382" y="418" font-family="ui-monospace, SF Mono, Menlo, monospace" font-size="26" fill="#529cca">npm install -g rr-cli</text>
+  <text x="382" y="418" font-family="ui-monospace, SF Mono, Menlo, monospace" font-size="26" fill="#529cca">npm install -g rr-html</text>
 </svg>
