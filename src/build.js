@@ -28,7 +28,9 @@ function loadComponents(fail) {
   const files = readdirSync(componentsDir).filter((f) => f.endsWith(".html")).sort();
   for (const f of files) {
     const text = readFileSync(join(componentsDir, f), "utf8");
-    const outsideTemplates = text.replace(TEMPLATE_RE, "");
+    // strip HTML comments before extracting assets so prose mentioning
+    // <style>/<script> tags can't be mistaken for the tags themselves
+    const outsideTemplates = text.replace(TEMPLATE_RE, "").replace(/<!--[\s\S]*?-->/g, "");
     const styleBlocks = [...outsideTemplates.matchAll(STYLE_RE)];
     fileAssets.set(f, {
       style: styleBlocks.filter((m) => !m[1]).map((m) => m[2].trim()).join("\n"),
