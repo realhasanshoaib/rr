@@ -1,4 +1,4 @@
-<!-- Deck: the Traverse chassis — a fixed spine with per-slide ticks and per-step
+<!-- Deck: a fixed spine with per-slide ticks and per-step
      sub-ticks, a corner coordinate readout, and a bottom HUD. Reader-paced:
      each → reveals the next step before advancing the slide; ← un-reveals
      before retreating. Steps are ghost waypoints — an unrevealed rr-step shows
@@ -58,8 +58,8 @@ body:has(.deck.is-play) main { display: block; padding: 0; }
 }
 .deck .slide > * { grid-column: 2; min-width: 0; }
 .deck .slide > .wide { grid-column: 1 / -1; width: min(1080px, 100%); justify-self: center; }
-.deck .slide h1 { font: 600 44px/1.15 var(--text); margin: 0 0 var(--s2); }
-.deck .slide h2, .deck .slide .slide-title { font: 600 30px/1.2 var(--text); margin: 0; border-bottom: 0; padding: 0; }
+.deck .slide h1 { font: 660 44px/1.08 var(--display); letter-spacing: -.04em; margin: 0 0 var(--s3); }
+.deck .slide h2, .deck .slide .slide-title { font: 650 30px/1.2 var(--text); margin: 0; border-bottom: 0; padding: 0; }
 .slide-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: var(--s1) var(--s2); margin-bottom: var(--s2); }
 .slide-head .slide-kicker { margin-left: auto; }
 .slide-title:empty, .slide-kicker:empty { display: none; }
@@ -78,12 +78,12 @@ body:has(.deck.is-play) main { display: block; padding: 0; }
 /* the HUD ----------------------------------------------------------------- */
 .deck .hud {
   position: fixed; inset: auto 0 0 var(--spine-w); z-index: 20; display: flex; align-items: center; gap: var(--s2);
-  padding: 7px var(--s2); border-top: 1px solid var(--line);
-  background: color-mix(in srgb, var(--bg) 90%, transparent); backdrop-filter: blur(8px);
+  padding: 7px var(--s3); border-top: 1px solid var(--line);
+  background: var(--surface-muted); box-shadow: var(--shadow-sm);
 }
-.hud-btn { font: 500 var(--t-chrome)/1 var(--label); color: var(--muted); border: 1px solid var(--line); border-radius: var(--radius); padding: 6px 12px; background: var(--bg); }
-.hud-btn:hover { color: var(--fg); border-color: var(--muted); }
-.hud-btn[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); }
+.hud-btn { min-height: 36px; font: 500 var(--t-chrome)/1 var(--label); color: var(--muted); border: 1px solid var(--line-strong); border-radius: var(--radius-sm); padding: 6px 12px; background: var(--surface); }
+.hud-btn:hover { color: var(--fg); border-color: var(--ink-3); }
+.hud-btn[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); background: var(--wash-blue); }
 .hud-hint { font: 400 var(--t-chrome)/1 var(--label); color: var(--muted); }
 .hud-bar { flex: 1; min-width: 60px; height: 2px; background: var(--line); }
 .hud-bar > i { display: block; height: 100%; width: 0; background: var(--accent); }
@@ -93,7 +93,7 @@ body:has(.deck.is-play) main { display: block; padding: 0; }
 .deck.is-play .beat:not(.is-shown) { visibility: hidden; }
 .deck.is-play .beat.is-done { opacity: .55; }
 .deck.is-play .beat.is-done:hover { opacity: 1; }
-.is-marked { border-radius: var(--radius); outline: 2px solid var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.is-marked { border-radius: var(--radius); outline: 2px solid var(--accent); outline-offset: 2px; background: var(--wash-blue); }
 
 /* steps — ghost waypoints: coordinate visible, body earned, space reserved -- */
 .deck .step { display: grid; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); padding: var(--s2) var(--s3); margin: var(--s2) 0; }
@@ -110,7 +110,7 @@ body:has(.deck.is-play) main { display: block; padding: 0; }
 .deck.is-doc { grid-column: 1 / -1; width: 100%; }
 .deck.is-doc .deck-spine, .deck.is-doc .corner { display: none; }
 .deck.is-doc .slide {
-  display: grid; grid-template-columns: 1fr min(720px, calc(100% - var(--s5))) 1fr;
+  display: grid; grid-template-columns: minmax(22px, 1fr) minmax(0, 720px) minmax(22px, 1fr);
   row-gap: var(--s1); padding: var(--s5) 0; border-top: 1px solid var(--line);
 }
 .deck.is-doc .slide:first-of-type { border-top: none; }
@@ -133,12 +133,6 @@ body:has(.deck.is-play) main { display: block; padding: 0; }
   .deck .step .step-body, .deck .step .step-wp { transition: color .15s ease-out; }
   .hud-bar > i { transition: width .15s ease; }
 }
-</style>
-
-<style theme>
-.deck .slide h1 { letter-spacing: -.015em; }
-.deck .slide h2, .deck .slide .slide-title { letter-spacing: -.012em; }
-.corner { letter-spacing: .08em; }
 </style>
 
 <script>

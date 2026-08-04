@@ -53,7 +53,7 @@ By default `build` writes `<doc>.html` next to the source; pass `-o` to choose t
 
 ## Styling — bring your own design system
 
-The default output carries only structural CSS (layout, interaction states, mechanics) written against a small set of CSS custom properties, with neutral system-font light/dark defaults. To make documents look like *your* product, redefine the tokens — no component CSS to fight:
+The default output carries structural CSS (layout, interaction states, mechanics) written against a small set of CSS custom properties. To make documents look like *your* product, redefine the tokens — no component CSS to fight:
 
 ```css
 /* brand.css — inlined into the output with: rr build report.rr.html --css brand.css */
@@ -65,7 +65,7 @@ The default output carries only structural CSS (layout, interaction states, mech
 }
 ```
 
-The contract: surfaces (`--bg --surface --line`), ink (`--fg --muted`), semantics (`--accent --amber --green --red`), rhythm (`--s1`…`--s8`), type scale (`--t-display --t-section --t-sub --t-body --t-support --t-chrome`), voices (`--text --mono`), chrome labels (`--label --label-case --label-track`), and `--radius`. Anything deeper is plain CSS on stable class names — read the output, it's yours.
+The contract: surfaces (`--paper --paper-2 --surface --surface-muted --line --line-strong`, plus the `--bg` alias), ink (`--ink --ink-2 --ink-3`, plus `--fg` and `--muted`), semantics (`--accent --chalk-green --chalk-yellow --chalk-blue --chalk-pink --amber --green --red`), rhythm (`--s1`…`--s8`), type scale (`--t-display --t-section --t-sub --t-body --t-support --t-chrome`), voices (`--display --text --mono`), chrome labels (`--label --label-case --label-track`), radii (`--radius-sm --radius --radius-lg`), and elevation (`--shadow-sm --shadow-md`). Anything deeper is plain CSS on stable class names — read the output, it's yours.
 
 `--theme rr` inlines the bundled theme (see [Conventions](#the-bundled-theme---theme-rr)) after the structural layer instead.
 
@@ -182,16 +182,14 @@ Chunk *inside* a slide and reveal one unit per forward keypress. Two flavors: `r
 
 ### The bundled theme (`--theme rr`)
 
-Opt-in with `rr build … --theme rr`. This is **Traverse**, a cartographic design system: a chart-paper light theme (`#f4f5f3`) and a night-navigation dark theme (`#1b2023`), one survey-blue accent (`--accent #2456d6`), Avenir Next for the reading voice and SF Mono for the instrument voice (numbers, labels, coordinates). Two type laws hold every block together:
+Opt in with `rr build … --theme rr`. The bundled look is **Chalk**: warm paper (`#F7F6F2`) around contained white surfaces, near-black ink (`#0C0E12`) for direct actions, and one-pixel borders that do most of the structural work. It uses Bricolage Grotesque for display moments, Figtree for interface and reading text, and Spline Sans Mono for time and technical metadata when those fonts are available, with system fallbacks that preserve the hierarchy.
 
-- **Law 01 — the descending column.** The first line of any column or card is the largest; sizes only decrease downward. A kind-label rides the title line (right-aligned mono) or sits in the footer — never a small kicker stacked *above* a bigger line.
-- **Law 02 — the floor.** No content text below 16px and no chrome below 13px. The scale is display 34 / section 26 / sub 19 / body 18 / support 16 / chrome 13.
-
-- 4px radius, 1px hairlines, and **zero box-shadows** — separation is line and contrast, never a drop shadow. One accent; amber = open decision/risk, green = done, red = hard failure only. No gradients, no display fonts.
+- Buttons, inputs, tags, and tabs use a 6px radius; cards and panels use 10px; only special containers use 16px. Normal-flow components stay flat, while fixed controls and popovers may use the included soft shadows.
+- Blue is selection and information, green is success, yellow is attention, and pink/red marks destructive context. Every state includes a label, border, or position as well as color.
+- Labels stay sentence case, body text is 16px, interface labels are 12px to 14px, and display type uses tight tracking. The palette has a designed dark counterpart rather than an automatic inversion.
+- Motion is brief feedback only, with a single crisp blue `:focus-visible` outline. `rr-stage` is a contained interaction surface, not a decorative background treatment.
 - Give every jargon term an `rr-term`; it lights the **legend panel** (a fixed card on wide screens, an inline expansion on narrow ones), not a tooltip. Code appears as deliberate `rr-code` exhibits (collapsed by default), never as walls of snippets in prose.
 - **Retrieval over recognition:** close a section with `rr-recall` flip cards by default, and keep `rr-quiz` for real decision forks.
-- Calm motion: nothing autoplays; movement is feedback to the reader's interaction only, and a survey-blue outline marks `:focus-visible`.
-- Interactive mini-worlds live in `rr-stage`, never the prose column — that is the one place to write custom inline JS/SVG.
 
 ## How it works
 

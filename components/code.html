@@ -21,7 +21,7 @@
 .rr-code .line.annotated::after { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--amber); }
 .rr-code .ann-note, .rr-code .ann-editor {
   display: block; white-space: normal; margin: var(--s1) var(--s2) var(--s1) 3.5em; padding: var(--s1) var(--s2);
-  background: var(--bg); border: 1px solid var(--line); border-left: 3px solid var(--amber); border-radius: var(--radius);
+  background: var(--surface-muted); border: 1px solid var(--line); border-left: 3px solid var(--amber); border-radius: var(--radius-sm);
   font: 400 var(--t-support)/1.5 var(--text);
 }
 .rr-code .ann-note { cursor: pointer; }
@@ -31,8 +31,9 @@
 .rr-code .ann-editor .row .grow { flex: 1; }
 .ann-bar {
   position: fixed; right: var(--s2); bottom: var(--s2); z-index: 30;
-  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius);
   padding: var(--s1); display: flex; gap: var(--s1); align-items: center;
+  box-shadow: var(--shadow-sm);
 }
 .ann-bar[hidden] { display: none; }
 </style>

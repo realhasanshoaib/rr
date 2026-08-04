@@ -56,7 +56,7 @@
 .fullbleed {
   grid-column: 1 / -1; width: 100%; min-height: 100dvh;
   padding: var(--s5) clamp(var(--s2), 3vw, var(--s4)) var(--s6);
-  background: var(--surface);
+  background: var(--surface-muted);
   border-block: 1px solid var(--line);
 }
 :fullscreen { background: var(--bg); overflow-y: auto; }
@@ -65,10 +65,10 @@
 .stage-head .crumb b { color: var(--fg); font-weight: 600; }
 .stage-head .spacer { flex: 1; }
 .stage-body { max-width: 1080px; margin: 0 auto; }
-.stage-band { border: 1px dashed color-mix(in srgb, var(--muted) 35%, transparent); border-radius: var(--radius); padding: var(--s4) var(--s3) var(--s3); position: relative; margin: var(--s2) 0; }
+.stage-band { border: 1px dashed var(--line-strong); border-radius: var(--radius); padding: var(--s4) var(--s3) var(--s3); position: relative; margin: var(--s2) 0; }
 .stage-band > .band-label { position: absolute; top: -.7rem; left: var(--s2); background: var(--surface); padding: 0 var(--s1); font: 500 var(--t-chrome)/1.4 var(--label); color: var(--muted); text-transform: var(--label-case); letter-spacing: var(--label-track); }
 .stage-band .blocks { display: flex; gap: var(--s2); flex-wrap: wrap; }
-.block { background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius); padding: var(--s2) var(--s3); font-size: var(--t-support); min-width: 10rem; }
+.block { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: var(--s2) var(--s3); font-size: var(--t-support); min-width: 10rem; }
 .block b { font-weight: 600; }
 .block .caption { display: block; }
 .block.is-new { border-color: var(--accent); }
@@ -77,18 +77,10 @@
 .readout b { color: var(--fg); font-variant-numeric: tabular-nums; }
 .readout b.hot { color: var(--red); }
 .legend { display: flex; gap: var(--s2); font: 500 var(--t-support)/1.4 var(--label); color: var(--muted); align-items: center; flex-wrap: wrap; }
-.legend i { display: inline-block; width: .7rem; height: .7rem; border-radius: 2px; margin-right: .3rem; vertical-align: -1px; border: 1px solid var(--line); background: var(--bg); }
+.legend i { display: inline-block; width: .7rem; height: .7rem; border-radius: var(--radius-sm); margin-right: .3rem; vertical-align: -1px; border: 1px solid var(--line); background: var(--surface); }
 .legend .k-new i { border-color: var(--accent); }
 .legend .k-lit i { background: color-mix(in srgb, var(--accent) 14%, var(--bg)); border-color: color-mix(in srgb, var(--accent) 40%, var(--line)); }
 .legend .k-dim i { opacity: .35; }
 .legend .k-green i { background: var(--green); border-color: var(--green); }
 .legend .k-amber i { background: var(--amber); border-color: var(--amber); }
-</style>
-
-<style theme>
-/* rr theme — cartographic dot grid on the stage */
-.fullbleed {
-  background-image: radial-gradient(color-mix(in srgb, var(--muted) 18%, transparent) 1px, transparent 1px);
-  background-size: 24px 24px;
-}
 </style>

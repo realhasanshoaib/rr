@@ -77,9 +77,9 @@
 .recall-head { display: flex; align-items: center; gap: var(--s1); font: 600 var(--t-sub)/1.3 var(--label); letter-spacing: var(--label-track); color: var(--fg); margin-bottom: var(--s2); }
 .recall-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: var(--s2); }
 .recall { display: flex; flex-direction: column; }
-.recall-flip { display: grid; width: 100%; text-align: left; background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius); padding: var(--s2) var(--s3); cursor: pointer; }
-.recall-flip:hover { border-color: var(--muted); }
-.recall[data-flipped="true"] .recall-flip { border-color: var(--accent); }
+.recall-flip { display: grid; width: 100%; min-height: 40px; text-align: left; background: var(--surface-muted); border: 1px solid var(--line-strong); border-radius: var(--radius); padding: var(--s2) var(--s3); cursor: pointer; }
+.recall-flip:hover { border-color: var(--ink-3); }
+.recall[data-flipped="true"] .recall-flip { border-color: var(--accent); background: var(--wash-blue); }
 .recall-face { grid-area: 1 / 1; min-width: 0; }
 .recall-face.back { visibility: hidden; opacity: 0; }
 .recall[data-flipped="true"] .recall-face.front { visibility: hidden; opacity: 0; }
@@ -91,8 +91,8 @@
 .recall-mark[hidden] { display: none; }
 .recall-tag { font: 500 var(--t-support)/1.4 var(--label); letter-spacing: var(--label-track); text-transform: var(--label-case); color: var(--accent); }
 .recall-mark .grow { flex: 1; }
-.recall-self { font: 500 var(--t-chrome)/1 var(--label); color: var(--muted); border: 1px solid var(--line); border-radius: var(--radius); padding: 6px 10px; background: var(--bg); text-transform: var(--label-case); letter-spacing: var(--label-track); }
-.recall-self:hover { color: var(--fg); border-color: var(--muted); }
+.recall-self { min-height: 36px; font: 500 var(--t-chrome)/1 var(--label); color: var(--muted); border: 1px solid var(--line-strong); border-radius: var(--radius-sm); padding: 6px 10px; background: var(--surface); text-transform: var(--label-case); letter-spacing: var(--label-track); }
+.recall-self:hover { color: var(--fg); border-color: var(--ink-3); }
 .recall[data-mark="got"] [data-recall-got] { color: var(--green); border-color: var(--green); }
 .recall[data-mark="miss"] [data-recall-miss] { color: var(--red); border-color: var(--red); }
 .recall-foot { display: flex; gap: var(--s1); align-items: center; margin-top: var(--s2); }
@@ -105,14 +105,14 @@
 .quiz .q { padding: var(--s1) 0; }
 .quiz .q + .q { border-top: 1px solid var(--line); }
 .quiz .qt { font: 600 var(--t-body)/1.5 var(--text); margin: .25rem 0 var(--s1); }
-.quiz .choice { display: block; width: 100%; text-align: left; margin: 6px 0; background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius); padding: var(--s1) var(--s2); font-size: var(--t-support); }
+.quiz .choice { display: block; width: 100%; min-height: 40px; text-align: left; margin: 6px 0; background: var(--surface-muted); border: 1px solid var(--line-strong); border-radius: var(--radius-sm); padding: var(--s1) var(--s2); font-size: var(--t-support); }
 .quiz .q.answered .choice { cursor: default; }
-.quiz .q.answered .choice:hover { border-color: var(--line); }
-.quiz .choice.picked-right { border-color: var(--green); color: var(--green); }
-.quiz .choice.picked-wrong { border-color: var(--red); color: var(--red); }
-.quiz .q.answered .choice.is-correct { border-color: var(--green); }
+.quiz .q.answered .choice:hover { border-color: var(--line-strong); }
+.quiz .choice.picked-right { border-color: var(--green); color: var(--green); background: var(--wash-green); }
+.quiz .choice.picked-wrong { border-color: var(--red); color: var(--red); background: var(--wash-pink); }
+.quiz .q.answered .choice.is-correct { border-color: var(--green); background: var(--wash-green); }
 .quiz .q.answered .choice:not(.is-correct):not(.picked-wrong) { opacity: .55; }
-.quiz .why { border: 1px solid var(--line); border-left: 3px solid var(--accent); background: var(--bg); border-radius: var(--radius); padding: var(--s1) var(--s2); margin: var(--s1) 0; font-size: var(--t-support); }
+.quiz .why { border: 1px solid var(--line); border-left: 3px solid var(--accent); background: var(--wash-blue); border-radius: var(--radius-sm); padding: var(--s1) var(--s2); margin: var(--s1) 0; font-size: var(--t-support); }
 .quiz-foot { display: flex; gap: var(--s1); align-items: center; margin-top: var(--s2); }
 .quiz-foot .grow { flex: 1; }
 .quiz-foot .score { font: 500 var(--t-chrome)/1.4 var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
