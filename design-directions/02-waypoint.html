@@ -1,0 +1,729 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Waypoint — Reading Room design direction B</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    /* surfaces */
+    --bg: #f4f5f3;      /* chart paper */
+    --surface: #eceeea; /* raised panel */
+    --line: #dde1dd;    /* hairline — a rule is a boundary, never decoration */
+    /* ink */
+    --fg: #232a2e;      /* slate ink */
+    --muted: #7d8a90;   /* secondary ink */
+    /* position + semantics */
+    --accent: #2456d6;  /* survey blue — position, action, links */
+    --amber: #a8730d;
+    --green: #3f7a5a;
+    --red: #c04a42;
+    /* rhythm — 8px instrument */
+    --s1: 8px; --s2: 16px; --s3: 24px; --s4: 32px;
+    --s5: 48px; --s6: 64px; --s7: 96px; --s8: 128px;
+    /* voices */
+    --text: "Avenir Next", Avenir, Seravek, ui-sans-serif, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --radius: 4px;
+    --spine-w: 104px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1b2023; --surface: #232a2e; --line: #313a3f;
+      --fg: #dde3e6; --muted: #8b979d;
+      --accent: #6b9aff; --amber: #c99245; --green: #5f9e7d; --red: #d3675f;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font: 400 17px/1.65 var(--text); -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, p, ul, ol { margin: 0; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code { font: 500 .8em/1.5 var(--mono); background: var(--surface); border: 1px solid var(--line); border-radius: 2px; padding: .05rem .3rem; }
+  button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ---------- spine (signature) ---------- */
+  .spine {
+    position: fixed; inset: 0 auto 0 0; width: var(--spine-w); z-index: 30;
+    background: var(--bg); border-right: 1px solid var(--line);
+    display: flex; flex-direction: column;
+  }
+  .spine-mark { padding: var(--s2) 0 var(--s1) var(--s2); font: 600 10px/1.2 var(--mono); letter-spacing: .16em; color: var(--muted); }
+  .spine-rail { flex: 1; position: relative; display: flex; flex-direction: column; justify-content: space-evenly; padding: var(--s1) 0; }
+  .spine-rail::before { content: ""; position: absolute; left: var(--s2); top: var(--s1); bottom: var(--s1); width: 1px; background: var(--line); }
+  .spine-tick { position: relative; display: flex; align-items: center; gap: 7px; padding: 5px 4px 5px var(--s2); color: var(--muted); text-align: left; }
+  .spine-tick::before { content: ""; flex: none; width: 9px; height: 2px; background: currentColor; }
+  .spine-lab { font: 500 9px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; }
+  .spine-tick:hover { color: var(--fg); }
+  .spine-tick[aria-current="true"] { color: var(--accent); }
+  .spine-tick[aria-current="true"]::before { width: 15px; }
+  .spine-tick[aria-current="true"]::after {
+    content: ""; position: absolute; left: 13px; top: 50%; translate: 0 -50%;
+    width: 7px; height: 7px; border-radius: 50%; background: var(--accent);
+  }
+  .spine-pos { padding: var(--s1) 0 var(--s2) var(--s2); font: 500 10px/1.4 var(--mono); letter-spacing: .08em; color: var(--muted); }
+  @media (prefers-reduced-motion: no-preference) {
+    .spine-tick::before { transition: width .12s ease; }
+  }
+
+  /* ---------- hud ---------- */
+  .hud {
+    position: fixed; inset: auto 0 0 var(--spine-w); z-index: 20;
+    display: flex; align-items: center; gap: var(--s2); padding: 7px var(--s2);
+    border-top: 1px solid var(--line);
+    background: color-mix(in srgb, var(--bg) 90%, transparent); backdrop-filter: blur(8px);
+  }
+  .hud-btn { font: 500 13px/1 var(--mono); color: var(--muted); border: 1px solid var(--line); border-radius: var(--radius); padding: 5px 12px; background: var(--bg); }
+  .hud-btn:hover { color: var(--fg); border-color: var(--muted); }
+  .hud-bar { display: none; flex: 1; height: 2px; background: var(--line); }
+  .hud-bar > i { display: block; height: 100%; background: var(--accent); }
+  .hud-count { margin-left: auto; font: 500 11px/1 var(--mono); letter-spacing: .08em; color: var(--muted); }
+  .hud-hint { font: 400 11px/1 var(--mono); color: var(--muted); }
+
+  /* ---------- slides ---------- */
+  .slide {
+    display: none; min-height: 100dvh;
+    padding: var(--s6) var(--s4) var(--s7) calc(var(--spine-w) + var(--s4));
+    grid-template-columns: 1fr min(880px, 100%) 1fr; align-content: center; row-gap: 4px;
+    position: relative;
+  }
+  .slide.active { display: grid; overflow-y: auto; }
+  .slide > * { grid-column: 2; min-width: 0; }
+  .kicker { font: 500 11px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin-bottom: var(--s2); }
+  .kicker b { color: var(--accent); font-weight: 600; }
+  .slide h1 { font: 600 44px/1.15 var(--text); letter-spacing: -.015em; }
+  .slide h2 { font: 600 30px/1.2 var(--text); letter-spacing: -.012em; margin-bottom: var(--s2); }
+  .lede { font-size: 19px; line-height: 1.6; max-width: 62ch; }
+  .note { color: var(--muted); font-size: 14px; }
+  .m-top-2 { margin-top: var(--s2); } .m-top-3 { margin-top: var(--s3); } .m-top-4 { margin-top: var(--s4); }
+
+  @media (max-width: 900px) {
+    .spine { display: none; }
+    .hud { left: 0; }
+    .hud-bar { display: block; }
+    .hud-hint { display: none; }
+    .slide { padding-left: var(--s3); padding-right: var(--s3); }
+    .slide h1 { font-size: 34px; }
+  }
+
+  /* ---------- icons ---------- */
+  .icon { width: 1.15em; height: 1.15em; vertical-align: -.2em; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: square; stroke-linejoin: miter; }
+
+  /* ---------- title slide ---------- */
+  .contours { position: absolute; right: -4%; bottom: -8%; width: min(52%, 560px); pointer-events: none; }
+  .contours path { fill: none; stroke: var(--line); stroke-width: 1.5; }
+  .contours .you { fill: var(--accent); stroke: none; }
+  .contours text { font: 600 9px var(--mono); letter-spacing: .14em; fill: var(--accent); }
+  .above { position: relative; z-index: 1; }
+  .legend-toc { list-style: none; padding: 0; margin-top: var(--s4); display: grid; grid-template-columns: 1fr 1fr; gap: 6px var(--s5); max-width: 720px; counter-reset: none; }
+  .legend-toc a { display: flex; align-items: baseline; gap: 12px; color: var(--fg); padding: 4px 0; border-bottom: 1px solid var(--line); }
+  .legend-toc a:hover { color: var(--accent); text-decoration: none; }
+  .legend-toc .no { font: 600 11px/1 var(--mono); letter-spacing: .1em; color: var(--muted); min-width: 2.2em; }
+  .legend-toc a:hover .no { color: var(--accent); }
+
+  /* ---------- principle cards ---------- */
+  .prin { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s2); }
+  @media (max-width: 900px) { .prin { grid-template-columns: 1fr; } }
+  .prin-card { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); padding: var(--s3) var(--s3) var(--s3); }
+  .prin-card .icon { width: 22px; height: 22px; color: var(--accent); }
+  .prin-card h3 { font: 600 16px/1.35 var(--text); margin: var(--s2) 0 var(--s1); }
+  .prin-card p { font-size: 14.5px; line-height: 1.6; color: var(--fg); }
+
+  /* ---------- type slide ---------- */
+  .spec { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+  .spec-row { display: grid; grid-template-columns: 190px 1fr; gap: var(--s3); align-items: baseline; padding: var(--s2) var(--s3); border-bottom: 1px solid var(--line); }
+  .spec-row:last-child { border-bottom: 0; }
+  .spec-meta { font: 500 10.5px/1.6 var(--mono); letter-spacing: .06em; color: var(--muted); text-transform: uppercase; }
+  .sp-display { font: 600 32px/1.15 var(--text); letter-spacing: -.015em; }
+  .sp-section { font: 600 22px/1.25 var(--text); letter-spacing: -.01em; }
+  .sp-body { font: 400 17px/1.65 var(--text); }
+  .sp-inst { font: 500 13px/1.6 var(--mono); }
+  .sp-label { font: 500 11px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; }
+  @media (max-width: 900px) { .spec-row { grid-template-columns: 1fr; gap: 4px; } }
+
+  /* ---------- color slide ---------- */
+  .strip { display: grid; grid-template-columns: repeat(9, 1fr); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+  .sw { padding: 10px 8px 8px; min-height: 88px; display: flex; flex-direction: column; justify-content: flex-end; gap: 2px; }
+  .sw b { font: 600 9.5px/1.3 var(--mono); letter-spacing: .06em; text-transform: uppercase; }
+  .sw span { font: 400 9.5px/1.3 var(--mono); opacity: .75; }
+  .strip-cap { font: 500 10px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin: var(--s3) 0 var(--s1); }
+  .sem { list-style: none; padding: 0; margin-top: var(--s3); display: grid; gap: 6px; font-size: 15px; }
+  .sem i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 10px; vertical-align: baseline; }
+  @media (max-width: 900px) { .strip { grid-template-columns: repeat(3, 1fr); } }
+
+  /* ---------- spacing slide ---------- */
+  .cols2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s4); align-items: start; }
+  @media (max-width: 900px) { .cols2 { grid-template-columns: 1fr; } }
+  .srow { display: grid; grid-template-columns: 3.2em 1fr; align-items: center; gap: 12px; padding: 5px 0; }
+  .srow code { border: 0; background: none; padding: 0; color: var(--muted); font-size: 11px; }
+  .srow i { display: block; height: 12px; background: var(--muted); }
+  .srow span { font: 400 10px/1 var(--mono); color: var(--muted); }
+  .anatomy { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); display: grid; grid-template-columns: 34px 1fr; min-height: 300px; overflow: hidden; }
+  .an-spine { border-right: 1px solid var(--line); display: flex; flex-direction: column; justify-content: space-evenly; padding: 8px 0; }
+  .an-spine i { display: block; width: 8px; height: 2px; background: var(--muted); margin-left: 8px; }
+  .an-spine i.on { width: 13px; background: var(--accent); }
+  .an-page { padding: var(--s3); display: flex; flex-direction: column; }
+  .an-kick { width: 34%; height: 8px; background: var(--muted); opacity: .55; }
+  .an-title { width: 62%; height: 18px; background: var(--fg); opacity: .8; }
+  .an-block { height: 44px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg); }
+  .an-gap { display: flex; align-items: center; gap: 8px; color: var(--accent); font: 500 9.5px/1 var(--mono); letter-spacing: .08em; }
+  .an-gap::before { content: ""; width: 1px; align-self: stretch; background: var(--accent); margin-left: 10px; }
+  .an-g2 { height: var(--s2); } .an-g3 { height: var(--s3); }
+
+  /* ---------- icon slide ---------- */
+  .iconrow { display: grid; grid-template-columns: repeat(8, 1fr); gap: var(--s2); text-align: center; }
+  .iconrow .icon { width: 26px; height: 26px; }
+  .iconrow figure { margin: 0; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); padding: var(--s2) 4px 10px; }
+  .iconrow figcaption { font: 500 9px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-top: 10px; }
+  @media (max-width: 900px) { .iconrow { grid-template-columns: repeat(4, 1fr); } }
+  .icon-grid-demo { width: 128px; height: 128px; border: 1px solid var(--line); background:
+      repeating-linear-gradient(to right, var(--line) 0 1px, transparent 1px 16px),
+      repeating-linear-gradient(to bottom, var(--line) 0 1px, transparent 1px 16px);
+    display: grid; place-items: center; flex: none; }
+  .icon-grid-demo .icon { width: 96px; height: 96px; stroke-width: 2; color: var(--fg); }
+  .icon-spec { display: flex; gap: var(--s4); align-items: flex-start; }
+  .dodont { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s2); }
+  .dd { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); padding: var(--s2) var(--s3); display: flex; gap: var(--s2); align-items: center; }
+  .dd .icon { width: 30px; height: 30px; flex: none; }
+  .dd-bad .icon { stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.2; }
+  .dd b { font: 600 10px/1 var(--mono); letter-spacing: .12em; }
+  .dd-ok b { color: var(--green); } .dd-bad b { color: var(--red); }
+  .dd p { font-size: 13px; line-height: 1.5; color: var(--muted); margin-top: 4px; }
+
+  /* ---------- components slide ---------- */
+  .eyebrow { display: block; font: 600 10px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: var(--s1); }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: var(--s2) var(--s3); }
+  .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s2); }
+  .tile-v { font: 600 26px/1.2 var(--mono); letter-spacing: -.02em; }
+  .tile-c { font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .badge { display: inline-block; font: 600 10px/1.7 var(--mono); letter-spacing: .1em; text-transform: uppercase; border: 1px solid var(--line); border-radius: 2px; padding: 1px 8px; color: var(--muted); }
+  .badge-blue { color: var(--accent); border-color: var(--accent); }
+  .badge-green { color: var(--green); border-color: var(--green); }
+  .badge-amber { color: var(--amber); border-color: var(--amber); }
+  .badge-red { color: var(--red); border-color: var(--red); }
+  .callout { border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: var(--radius); background: var(--surface); padding: var(--s2) var(--s3); font-size: 15px; }
+  .callout-amber { border-left-color: var(--amber); }
+  .prog-label { display: flex; justify-content: space-between; font: 500 11px/1 var(--mono); letter-spacing: .08em; color: var(--muted); margin-bottom: 6px; }
+  .prog { height: 4px; background: var(--line); }
+  .prog > i { display: block; height: 100%; background: var(--green); }
+  .comp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s2); align-items: start; }
+  @media (max-width: 900px) { .comp-grid { grid-template-columns: 1fr; } }
+
+  /* ---------- apparatus slide ---------- */
+  .lookup { display: grid; grid-template-columns: 1fr 264px; gap: var(--s3); align-items: start; }
+  @media (max-width: 900px) { .lookup { grid-template-columns: 1fr; } }
+  .term { border-bottom: 1px dotted var(--muted); cursor: help; }
+  .term-hot { border-bottom-color: var(--accent); color: var(--accent); border-bottom-style: solid; }
+  .legend { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); padding: var(--s2); }
+  .legend h3 { font: 600 10px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin-bottom: var(--s2); }
+  .legend-item { padding: 8px 10px; border-radius: 2px; border-left: 2px solid var(--line); margin-bottom: 8px; }
+  .legend-item:last-child { margin-bottom: 0; }
+  .legend-item b { display: block; font: 600 12.5px/1.4 var(--text); }
+  .legend-item p { font-size: 13px; line-height: 1.5; color: var(--muted); }
+  .legend-lit { border-left-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); }
+  .legend-lit p { color: var(--fg); }
+  details { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); padding: 10px var(--s2); }
+  summary { cursor: pointer; font: 500 13px/1.5 var(--text); color: var(--muted); }
+  summary:hover { color: var(--fg); }
+  details[open] summary { margin-bottom: var(--s1); color: var(--fg); }
+  .quiz { border: 1px solid var(--line); border-radius: var(--radius); padding: var(--s2) var(--s3); }
+  .quiz-q { font: 600 15px/1.5 var(--text); margin-bottom: var(--s2); }
+  .choice { display: block; width: 100%; text-align: left; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); padding: 9px 14px; font-size: 14.5px; margin-bottom: 8px; }
+  .choice:hover { border-color: var(--muted); }
+  .choice-mark { font: 600 10px/1 var(--mono); letter-spacing: .08em; color: var(--muted); margin-right: 8px; }
+  .quiz-done .choice { cursor: default; }
+  .quiz-done .choice[data-ok="1"] { border-color: var(--green); color: var(--green); }
+  .quiz-done .choice-picked[data-ok="0"] { border-color: var(--red); color: var(--red); }
+  .why { display: none; font-size: 14px; color: var(--muted); border-top: 1px solid var(--line); padding-top: var(--s1); margin-top: 4px; }
+  .quiz-done .why { display: block; }
+  .why b { color: var(--green); font: 600 10px/1 var(--mono); letter-spacing: .1em; }
+
+  /* ---------- specimen route ---------- */
+  .route { list-style: none; padding: 0; position: relative; }
+  .route::before { content: ""; position: absolute; left: 13px; top: 14px; bottom: 14px; width: 2px; background: var(--line); }
+  .route li { position: relative; padding: 0 0 var(--s3) var(--s5); }
+  .route li:last-child { padding-bottom: 0; }
+  .wp-dot { position: absolute; left: 0; top: 0; width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--accent); background: var(--bg); display: grid; place-items: center; color: var(--accent); }
+  .wp-dot .icon { width: 14px; height: 14px; }
+  .wp-red { border-color: var(--red); color: var(--red); }
+  .wp-green { border-color: var(--green); color: var(--green); }
+  .wp-co { font: 600 10px/1 var(--mono); letter-spacing: .12em; color: var(--muted); }
+  .wp-t { font: 600 16px/1.4 var(--text); margin: 2px 0; }
+  .wp-t code { font-size: .75em; }
+  .wp-d { font-size: 14.5px; line-height: 1.55; color: var(--muted); max-width: 62ch; }
+
+  /* ---------- spine anatomy slide ---------- */
+  .tickstates { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s2); }
+  @media (max-width: 900px) { .tickstates { grid-template-columns: 1fr; } }
+  .ts { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); padding: var(--s2) var(--s3); }
+  .ts-demo { display: flex; align-items: center; gap: 8px; height: 34px; position: relative; }
+  .ts-demo::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 1px; background: var(--line); }
+  .ts-line { width: 9px; height: 2px; background: var(--muted); }
+  .ts-lab { font: 500 10px/1 var(--mono); letter-spacing: .12em; color: var(--muted); }
+  .ts-on .ts-line { width: 15px; background: var(--accent); }
+  .ts-on .ts-lab { color: var(--accent); }
+  .ts-on .ts-demo::after { content: ""; position: absolute; left: -3px; top: 50%; translate: 0 -50%; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+  .ts-hov .ts-line { background: var(--fg); }
+  .ts-hov .ts-lab { color: var(--fg); }
+  .ts p { font-size: 13px; line-height: 1.5; color: var(--muted); margin-top: 6px; }
+  .ts b { font: 600 10px/1 var(--mono); letter-spacing: .12em; color: var(--fg); }
+
+  /* ---------- code / adoption ---------- */
+  pre { margin: 0; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: var(--s2) var(--s3); overflow-x: auto; font: 400 12px/1.7 var(--mono); }
+  pre b { color: var(--accent); font-weight: 600; }
+  pre i { color: var(--muted); font-style: normal; }
+  .adopt-list { list-style: none; padding: 0; display: grid; gap: 10px; }
+  .adopt-list li { display: flex; gap: 12px; font-size: 15px; line-height: 1.55; }
+  .adopt-list .no { font: 600 11px/1.9 var(--mono); color: var(--accent); flex: none; }
+</style>
+</head>
+<body>
+
+<svg style="display:none" aria-hidden="true">
+  <symbol id="i-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2.1 5-5 2.1 2.1-5z"/></symbol>
+  <symbol id="i-waypoint" viewBox="0 0 24 24"><path d="M12 21c-4.2-3.8-6.5-7.1-6.5-10A6.5 6.5 0 0 1 12 4.5 6.5 6.5 0 0 1 18.5 11c0 2.9-2.3 6.2-6.5 10z"/><circle cx="12" cy="11" r="2.2"/></symbol>
+  <symbol id="i-route" viewBox="0 0 24 24"><path d="M5 20h7.5a4 4 0 0 0 0-8H8a4 4 0 0 1 0-8h6"/><circle cx="5" cy="20" r="1.8"/><rect x="15" y="2" width="4" height="4"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13.5l9 5 9-5"/></symbol>
+  <symbol id="i-ruler" viewBox="0 0 24 24"><rect x="2.5" y="8.5" width="19" height="7"/><path d="M7 8.5v3M11.5 8.5v3M16 8.5v3"/></symbol>
+  <symbol id="i-flag" viewBox="0 0 24 24"><path d="M5.5 21V3.5"/><path d="M5.5 4.5H18l-2.5 3.5L18 11.5H5.5"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M4.5 12.5l5 5L19.5 7"/></symbol>
+  <symbol id="i-signal" viewBox="0 0 24 24"><path d="M4.5 20v-4M9.5 20v-8M14.5 20v-12M19.5 20V4"/></symbol>
+</svg>
+
+<nav class="spine" aria-label="Deck sections">
+  <div class="spine-mark">RR·WPT</div>
+  <div class="spine-rail" id="rail"></div>
+  <div class="spine-pos" id="spinePos">01 / 11</div>
+</nav>
+
+<!-- 1 · START -->
+<section class="slide" data-spine="Start">
+  <svg class="contours" viewBox="0 0 560 520" aria-hidden="true">
+    <path d="M120 470 C40 420 30 330 80 260 C130 190 240 170 330 200 C420 230 480 300 460 380 C440 460 340 500 250 495 C200 492 165 488 120 470 Z"/>
+    <path d="M150 440 C90 400 80 330 122 275 C164 220 255 202 328 228 C401 254 448 310 432 372 C416 434 336 466 262 462 C220 460 186 456 150 440 Z"/>
+    <path d="M185 408 C140 378 132 326 164 286 C196 246 264 233 318 253 C372 273 407 315 395 360 C383 405 324 429 270 426 C238 424 212 421 185 408 Z"/>
+    <path d="M222 375 C192 355 186 320 208 293 C230 266 276 258 312 271 C348 284 371 312 363 342 C355 372 316 388 280 386 C258 385 240 383 222 375 Z"/>
+    <circle class="you" cx="286" cy="326" r="6"/>
+    <text x="302" y="330">YOU ARE HERE</text>
+  </svg>
+  <div class="above">
+    <p class="kicker"><b>01 · START</b> &nbsp;·&nbsp; READING ROOM · DESIGN DIRECTION B · 2026-07-23</p>
+    <h1>Waypoint</h1>
+    <p class="lede m-top-3">You can't learn what you can't place. Waypoint makes a document's structure permanently visible — every screen tells you where you are, what came before, and what's next, <em>before</em> it tells you anything else.</p>
+    <ol class="legend-toc">
+      <li><a href="#2" data-goto="2"><span class="no">02</span> Stance — orientation is the learning strategy</a></li>
+      <li><a href="#3" data-goto="3"><span class="no">03</span> Type — two voices, never blended</a></li>
+      <li><a href="#4" data-goto="4"><span class="no">04</span> Color — one accent on the map</a></li>
+      <li><a href="#5" data-goto="5"><span class="no">05</span> Space — the 8px instrument</a></li>
+      <li><a href="#6" data-goto="6"><span class="no">06</span> Icons — squared, 2px, 24-grid</a></li>
+      <li><a href="#7" data-goto="7"><span class="no">07</span> Parts — components, re-surveyed</a></li>
+      <li><a href="#8" data-goto="8"><span class="no">08</span> Lookup — the legend panel</a></li>
+      <li><a href="#9" data-goto="9"><span class="no">09</span> Specimen — one build, five waypoints</a></li>
+      <li><a href="#10" data-goto="10"><span class="no">10</span> Spine — the rail is the deck</a></li>
+      <li><a href="#11" data-goto="11"><span class="no">11</span> Adoption — tokens and kit changes</a></li>
+    </ol>
+    <p class="note m-top-4">← → to move · click any tick on the rail · <code>#n</code> deep-links a slide</p>
+  </div>
+</section>
+
+<!-- 2 · STANCE -->
+<section class="slide" data-spine="Stance">
+  <p class="kicker"><b>02 · STANCE</b></p>
+  <h2>Orientation before information</h2>
+  <p class="lede">A lost reader spends working memory asking <em>where am I?</em> instead of learning. Waypoint spends design effort so that question never comes up.</p>
+  <div class="prin m-top-4">
+    <div class="prin-card">
+      <svg class="icon"><use href="#i-compass"/></svg>
+      <h3>Place first, then teach</h3>
+      <p>Every screen opens with its coordinate, its section name, and its position on the rail. Orientation costs the reader nothing, so all attention lands on the content.</p>
+    </div>
+    <div class="prin-card">
+      <svg class="icon"><use href="#i-layers"/></svg>
+      <h3>Structure is drawn, not implied</h3>
+      <p>Hairlines, eyebrows and coordinates encode the document's real shape. A rule marks a boundary in the material — if it doesn't mark one, it isn't drawn.</p>
+    </div>
+    <div class="prin-card">
+      <svg class="icon"><use href="#i-signal"/></svg>
+      <h3>Two voices, never blended</h3>
+      <p>Avenir Next reads the prose; the mono instrument voice carries every number, path, label and coordinate. Your eye learns the routing: sans is ideas, mono is facts.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 3 · TYPE -->
+<section class="slide" data-spine="Type">
+  <p class="kicker"><b>03 · TYPE</b></p>
+  <h2>Two voices</h2>
+  <p class="m-top-2" style="max-width:66ch">The reading voice is <strong>Avenir Next</strong> — geometric-humanist, the closest thing macOS ships to a cartographer's hand. The instrument voice is <strong>SF Mono</strong>, and it is strict: if a string is a number, a path, a coordinate or a label, it is mono. That contrast is a learning device — you can scan a slide for facts without reading a sentence.</p>
+  <div class="spec m-top-3">
+    <div class="spec-row">
+      <span class="spec-meta">display · 44/1.15 · 600<br>tracking −1.5%</span>
+      <span class="sp-display">The rail is the deck</span>
+    </div>
+    <div class="spec-row">
+      <span class="spec-meta">section · 22/1.25 · 600</span>
+      <span class="sp-section">Fails loudly, on purpose</span>
+    </div>
+    <div class="spec-row">
+      <span class="spec-meta">body · 17/1.65 · 400<br>max 66ch</span>
+      <span class="sp-body">The build expands each component against its template, then stops on the first thing it doesn't recognize.</span>
+    </div>
+    <div class="spec-row">
+      <span class="spec-meta">instrument · SF Mono 13</span>
+      <span class="sp-inst">build.mjs · 25 icons registered · 9 shipped · 0 errors</span>
+    </div>
+    <div class="spec-row">
+      <span class="spec-meta">label · mono 11 caps<br>tracking +14%</span>
+      <span class="sp-label">09 · Specimen</span>
+    </div>
+  </div>
+</section>
+
+<!-- 4 · COLOR -->
+<section class="slide" data-spine="Color">
+  <p class="kicker"><b>04 · COLOR</b></p>
+  <h2>One accent on the map</h2>
+  <p class="m-top-2" style="max-width:66ch">Everything is terrain except position. Survey blue is reserved for <em>where you are and what you can act on</em> — the rail dot, links, the current tick. The semantic trio keeps its Reading Room meaning and stays rare.</p>
+  <p class="strip-cap">Light · chart paper</p>
+  <div class="strip">
+    <div class="sw" style="background:#f4f5f3;color:#232a2e"><b>bg</b><span>#f4f5f3</span></div>
+    <div class="sw" style="background:#eceeea;color:#232a2e"><b>surface</b><span>#eceeea</span></div>
+    <div class="sw" style="background:#dde1dd;color:#232a2e"><b>line</b><span>#dde1dd</span></div>
+    <div class="sw" style="background:#232a2e;color:#f4f5f3"><b>ink</b><span>#232a2e</span></div>
+    <div class="sw" style="background:#7d8a90;color:#f4f5f3"><b>muted</b><span>#7d8a90</span></div>
+    <div class="sw" style="background:#2456d6;color:#f4f5f3"><b>survey</b><span>#2456d6</span></div>
+    <div class="sw" style="background:#a8730d;color:#f4f5f3"><b>amber</b><span>#a8730d</span></div>
+    <div class="sw" style="background:#3f7a5a;color:#f4f5f3"><b>green</b><span>#3f7a5a</span></div>
+    <div class="sw" style="background:#c04a42;color:#f4f5f3"><b>red</b><span>#c04a42</span></div>
+  </div>
+  <p class="strip-cap">Dark · night navigation — never near-black</p>
+  <div class="strip">
+    <div class="sw" style="background:#1b2023;color:#dde3e6"><b>bg</b><span>#1b2023</span></div>
+    <div class="sw" style="background:#232a2e;color:#dde3e6"><b>surface</b><span>#232a2e</span></div>
+    <div class="sw" style="background:#313a3f;color:#dde3e6"><b>line</b><span>#313a3f</span></div>
+    <div class="sw" style="background:#dde3e6;color:#1b2023"><b>ink</b><span>#dde3e6</span></div>
+    <div class="sw" style="background:#8b979d;color:#1b2023"><b>muted</b><span>#8b979d</span></div>
+    <div class="sw" style="background:#6b9aff;color:#1b2023"><b>survey</b><span>#6b9aff</span></div>
+    <div class="sw" style="background:#c99245;color:#1b2023"><b>amber</b><span>#c99245</span></div>
+    <div class="sw" style="background:#5f9e7d;color:#1b2023"><b>green</b><span>#5f9e7d</span></div>
+    <div class="sw" style="background:#d3675f;color:#1b2023"><b>red</b><span>#d3675f</span></div>
+  </div>
+  <ul class="sem">
+    <li><i style="background:var(--accent)"></i><strong>Survey blue</strong> — your position, and anything you can click. Nothing else.</li>
+    <li><i style="background:var(--amber)"></i><strong>Amber</strong> — open decision or risk. &nbsp;<i style="background:var(--green)"></i><strong>Green</strong> — verified, done. &nbsp;<i style="background:var(--red)"></i><strong>Red</strong> — hard failure only.</li>
+  </ul>
+</section>
+
+<!-- 5 · SPACE -->
+<section class="slide" data-spine="Space">
+  <p class="kicker"><b>05 · SPACE</b></p>
+  <h2>The 8px instrument</h2>
+  <p class="m-top-2" style="max-width:66ch">All spacing snaps to an eight-step ruler, <code>--s1</code> through <code>--s8</code>. And one hard rule: a hairline is a boundary in the content's structure — between sections, between a figure and its caption — never decoration.</p>
+  <div class="cols2 m-top-3">
+    <div>
+      <p class="strip-cap">Scale</p>
+      <div class="srow"><code>--s1</code><i style="width:8px"></i><span>8</span></div>
+      <div class="srow"><code>--s2</code><i style="width:16px"></i><span>16</span></div>
+      <div class="srow"><code>--s3</code><i style="width:24px"></i><span>24</span></div>
+      <div class="srow"><code>--s4</code><i style="width:32px"></i><span>32</span></div>
+      <div class="srow"><code>--s5</code><i style="width:48px"></i><span>48</span></div>
+      <div class="srow"><code>--s6</code><i style="width:64px"></i><span>64</span></div>
+      <div class="srow"><code>--s7</code><i style="width:96px"></i><span>96</span></div>
+      <div class="srow"><code>--s8</code><i style="width:128px"></i><span>128</span></div>
+    </div>
+    <div>
+      <p class="strip-cap">Anatomy of a slide</p>
+      <div class="anatomy">
+        <div class="an-spine" aria-hidden="true"><i></i><i></i><i class="on"></i><i></i><i></i><i></i></div>
+        <div class="an-page">
+          <div class="an-kick"></div>
+          <div class="an-gap an-g2">--s2</div>
+          <div class="an-title"></div>
+          <div class="an-gap an-g3">--s3</div>
+          <div class="an-block"></div>
+          <div class="an-gap an-g2">--s2</div>
+          <div class="an-block"></div>
+        </div>
+      </div>
+      <p class="note m-top-2">Spine at left, content on a <code>min(880px, 100%)</code> column, gaps drawn from the scale.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 6 · ICONS -->
+<section class="slide" data-spine="Icons">
+  <p class="kicker"><b>06 · ICONS</b></p>
+  <h2>Instrument strokes</h2>
+  <div class="icon-spec m-top-3">
+    <div class="icon-grid-demo"><svg class="icon"><use href="#i-compass"/></svg></div>
+    <div>
+      <p style="max-width:56ch">Drawn on a <strong>24-unit grid</strong> at a constant <strong>2px stroke</strong>, with <strong>square caps and miter joins</strong> — the way an instrument is machined, not the way a marker doodles. No fills, so every icon follows the theme through <code>currentColor</code>.</p>
+      <p class="note m-top-2">The build already tree-shakes the sprite; this direction only redraws the set.</p>
+    </div>
+  </div>
+  <div class="iconrow m-top-3">
+    <figure><svg class="icon"><use href="#i-compass"/></svg><figcaption>compass</figcaption></figure>
+    <figure><svg class="icon"><use href="#i-waypoint"/></svg><figcaption>waypoint</figcaption></figure>
+    <figure><svg class="icon"><use href="#i-route"/></svg><figcaption>route</figcaption></figure>
+    <figure><svg class="icon"><use href="#i-layers"/></svg><figcaption>layers</figcaption></figure>
+    <figure><svg class="icon"><use href="#i-ruler"/></svg><figcaption>ruler</figcaption></figure>
+    <figure><svg class="icon"><use href="#i-flag"/></svg><figcaption>flag</figcaption></figure>
+    <figure><svg class="icon"><use href="#i-check"/></svg><figcaption>check</figcaption></figure>
+    <figure><svg class="icon"><use href="#i-signal"/></svg><figcaption>signal</figcaption></figure>
+  </div>
+  <div class="dodont m-top-3">
+    <div class="dd dd-ok">
+      <svg class="icon" style="color:var(--fg)"><use href="#i-waypoint"/></svg>
+      <div><b>DO</b><p>2px, squared, stroke-only. Reads at 14px in a table and at 96px on a divider.</p></div>
+    </div>
+    <div class="dd dd-bad">
+      <svg class="icon" style="color:var(--fg)"><use href="#i-waypoint"/></svg>
+      <div><b>DON'T</b><p>No rounded caps, no 1.2px hairline strokes, no fills — that's a different tool's voice.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 7 · PARTS -->
+<section class="slide" data-spine="Parts">
+  <p class="kicker"><b>07 · PARTS</b></p>
+  <h2>Components, re-surveyed</h2>
+  <p class="m-top-2" style="max-width:66ch">Same Reading Room parts, squarer geometry (<code>radius: 4px</code>), and one new rule: <strong>every card carries a mono eyebrow</strong> naming what it is, so a figure can be cited like a coordinate.</p>
+  <div class="tiles m-top-3">
+    <div class="card"><span class="eyebrow">Tile · Build</span><div class="tile-v">412<span style="font-size:.55em">ms</span></div><div class="tile-c">demo.rr.html, cold run</div></div>
+    <div class="card"><span class="eyebrow">Tile · Sprite</span><div class="tile-v">9/25</div><div class="tile-c">icons shipped after tree-shake</div></div>
+    <div class="card"><span class="eyebrow">Tile · Checks</span><div class="tile-v">0</div><div class="tile-c">unknown components tolerated</div></div>
+  </div>
+  <div class="comp-grid m-top-2">
+    <div>
+      <div class="card">
+        <span class="eyebrow">Card · Fig 07-A</span>
+        <p style="font-size:14.5px">A surface holds one idea. The eyebrow names it, the hairline bounds it, and nothing inside competes with survey blue for your attention.</p>
+        <p class="m-top-2"><span class="badge">Neutral</span> <span class="badge badge-blue">Position</span> <span class="badge badge-green">Verified</span> <span class="badge badge-amber">Open</span> <span class="badge badge-red">Failed</span></p>
+      </div>
+      <div class="m-top-2">
+        <div class="prog-label"><span>MILESTONES</span><span>7 / 9</span></div>
+        <div class="prog"><i style="width:78%"></i></div>
+      </div>
+    </div>
+    <div>
+      <div class="callout callout-amber">
+        <span class="eyebrow" style="color:var(--amber)">Callout · Open decision</span>
+        Should the legend panel replace hover definitions in documents too, or only in decks? Amber means this is genuinely undecided — the deck is asking you.
+      </div>
+      <p class="note m-top-2">Bars never appear without their mono <code>n / m</code> label; a number you can't read isn't a measurement.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 8 · LOOKUP -->
+<section class="slide" data-spine="Lookup">
+  <p class="kicker"><b>08 · LOOKUP</b></p>
+  <h2>Definitions live in the legend</h2>
+  <p class="m-top-2" style="max-width:66ch">Maps don't use tooltips. Dotted terms in the prose light up their entry in a fixed <strong>legend panel</strong> — every definition stays on screen, in the same place, for the whole slide.</p>
+  <div class="lookup m-top-3">
+    <div>
+      <p style="max-width:58ch">The build reads your source, expands every component, then <span class="term" tabindex="0" data-term="treeshake">tree-shakes</span> the <span class="term" tabindex="0" data-term="sprite">icon sprite</span> so the output ships only what it uses. Because the file is <span class="term" tabindex="0" data-term="selfcontained">self-contained</span>, it opens from disk years later with zero dependencies.</p>
+      <details class="m-top-3">
+        <summary>Depth on demand — collapsibles keep the survey uncluttered</summary>
+        <p style="font-size:14px">Optional depth folds away exactly like this. The summary line states what's inside in plain words, so skipping it is an informed choice, not a gamble.</p>
+      </details>
+    </div>
+    <aside class="legend" aria-label="Legend — definitions for this slide">
+      <h3>Legend</h3>
+      <div class="legend-item" data-def="treeshake"><b>tree-shake</b><p>Keep only what's actually referenced; drop the rest at build time.</p></div>
+      <div class="legend-item" data-def="sprite"><b>icon sprite</b><p>One hidden SVG holding every symbol, referenced many times by id.</p></div>
+      <div class="legend-item" data-def="selfcontained"><b>self-contained</b><p>All CSS, JS and icons inline — no network, no CDN, no rot.</p></div>
+    </aside>
+  </div>
+  <div class="quiz m-top-3" id="quiz1">
+    <p class="quiz-q">Self-check — where does a term's definition live in Waypoint?</p>
+    <button class="choice" data-ok="0"><span class="choice-mark">A</span>In a floating tooltip over the word</button>
+    <button class="choice" data-ok="1"><span class="choice-mark">B</span>In the legend panel at the slide's edge</button>
+    <p class="why"><b>WHY</b> &nbsp;Tooltips vanish on mouse-out and cover neighboring text. The legend keeps every definition on screen in a fixed place — a second look costs one eye movement, not a hover.</p>
+  </div>
+</section>
+
+<!-- 9 · SPECIMEN -->
+<section class="slide" data-spine="Specimen">
+  <p class="kicker"><b>09 · SPECIMEN</b> &nbsp;·&nbsp; A REAL LESSON, SET IN WAYPOINT</p>
+  <h2>One build, five waypoints</h2>
+  <p class="m-top-2" style="max-width:66ch">What actually happens when you run <code>node build.mjs doc.rr.html</code>:</p>
+  <ol class="route m-top-3">
+    <li>
+      <span class="wp-dot"><svg class="icon"><use href="#i-layers"/></svg></span>
+      <span class="wp-co">WP·1 — PARSE</span>
+      <p class="wp-t">Read the source, find every <code>&lt;rr-*&gt;</code> tag</p>
+      <p class="wp-d">The <code>rr-doc</code> shell is located first; everything else must live inside it.</p>
+    </li>
+    <li>
+      <span class="wp-dot"><svg class="icon"><use href="#i-route"/></svg></span>
+      <span class="wp-co">WP·2 — EXPAND</span>
+      <p class="wp-t">Match each tag against its template in <code>components/</code></p>
+      <p class="wp-d">Props become attributes, children drop into slots, defaults fill in.</p>
+    </li>
+    <li>
+      <span class="wp-dot wp-red"><svg class="icon"><use href="#i-flag"/></svg></span>
+      <span class="wp-co" style="color:var(--red)">WP·3 — VERIFY</span>
+      <p class="wp-t">Fail loudly on anything unknown</p>
+      <p class="wp-d">Unknown component, missing prop, unregistered icon — the build stops and names the offender. That is the point: errors surface at build time, never in front of the reader.</p>
+    </li>
+    <li>
+      <span class="wp-dot"><svg class="icon"><use href="#i-ruler"/></svg></span>
+      <span class="wp-co">WP·4 — TREE-SHAKE</span>
+      <p class="wp-t">Copy only the icons actually used out of <code>icons.svg</code></p>
+      <p class="wp-d">A document that uses 9 symbols ships 9 symbols, not the library.</p>
+    </li>
+    <li>
+      <span class="wp-dot wp-green"><svg class="icon"><use href="#i-check"/></svg></span>
+      <span class="wp-co" style="color:var(--green)">WP·5 — EMIT</span>
+      <p class="wp-t">Write one self-contained HTML file</p>
+      <p class="wp-d">Canonical CSS, both themes, zero external requests. It opens from disk, forever.</p>
+    </li>
+  </ol>
+</section>
+
+<!-- 10 · SPINE -->
+<section class="slide" data-spine="Spine">
+  <p class="kicker"><b>10 · SPINE</b> &nbsp;·&nbsp; THE SIGNATURE</p>
+  <h2>The rail is the deck</h2>
+  <p class="m-top-2" style="max-width:66ch">The rail on your left has been live this whole time — one tick per slide, sections named, current position filled. It replaces the anonymous progress bar with an actual map of the material.</p>
+  <div class="tickstates m-top-3">
+    <div class="ts">
+      <div class="ts-demo"><span class="ts-line"></span><span class="ts-lab">RISKS</span></div>
+      <p><b>REST</b> — a 9px tick and its section name, in secondary ink. Present, quiet.</p>
+    </div>
+    <div class="ts ts-hov">
+      <div class="ts-demo"><span class="ts-line"></span><span class="ts-lab">RISKS</span></div>
+      <p><b>HOVER / FOCUS</b> — full ink. Every tick is a button; click or Enter jumps straight there.</p>
+    </div>
+    <div class="ts ts-on">
+      <div class="ts-demo"><span class="ts-line"></span><span class="ts-lab">RISKS</span></div>
+      <p><b>CURRENT</b> — the tick extends to 15px and the survey-blue dot sits on the rail: you are here.</p>
+    </div>
+  </div>
+  <div class="callout m-top-3">
+    <span class="eyebrow" style="color:var(--accent)">Why it matters for learning</span>
+    A 40-slide debrief stops being "62% done" and becomes five named sections you can see at once. You always know how much of <span style="font:600 10px var(--mono);letter-spacing:.1em">RISKS</span> is left, and returning tomorrow you re-enter at a named place, not a percentage. Position also lives in the URL (<code>#24</code>), so a slide can be cited like a line number.
+  </div>
+</section>
+
+<!-- 11 · ADOPT -->
+<section class="slide" data-spine="Adopt">
+  <p class="kicker"><b>11 · ADOPT</b></p>
+  <h2>Tokens, and what changes in the kit</h2>
+  <div class="cols2 m-top-3">
+    <pre><i>/* waypoint.tokens.css */</i>
+:root {
+  <b>--bg</b>: #f4f5f3;  <b>--surface</b>: #eceeea;
+  <b>--line</b>: #dde1dd; <i>/* rules are boundaries */</i>
+  <b>--fg</b>: #232a2e;  <b>--muted</b>: #7d8a90;
+  <b>--accent</b>: #2456d6; <i>/* position + action */</i>
+  <b>--amber</b>: #a8730d; <b>--green</b>: #3f7a5a;
+  <b>--red</b>: #c04a42;   <i>/* hard failure only */</i>
+  <b>--s1</b>: 8px;  <b>--s2</b>: 16px; <b>--s3</b>: 24px;
+  <b>--s4</b>: 32px; <b>--s5</b>: 48px; <b>--s6</b>: 64px;
+  <b>--s7</b>: 96px; <b>--s8</b>: 128px;
+  <b>--text</b>: "Avenir Next", Avenir,
+          Seravek, ui-sans-serif;
+  <b>--mono</b>: ui-monospace, "SF Mono";
+  <b>--radius</b>: 4px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    <b>--bg</b>: #1b2023; <b>--surface</b>: #232a2e;
+    <b>--line</b>: #313a3f; <b>--fg</b>: #dde3e6;
+    <b>--muted</b>: #8b979d; <b>--accent</b>: #6b9aff;
+    <b>--amber</b>: #c99245; <b>--green</b>: #5f9e7d;
+    <b>--red</b>: #d3675f;
+  }
+}</pre>
+    <div>
+      <ol class="adopt-list">
+        <li><span class="no">1</span><span>The deck shell grows the <strong>spine</strong>: slides declare a section name, the build renders the rail and mono coordinates on every kicker.</span></li>
+        <li><span class="no">2</span><span>The base sheet swaps to the <strong>two-voice type system</strong> — Avenir Next for prose, SF Mono for every fact — with radius 4 and the squared 2px icon set redrawn once in <code>icons.svg</code>.</span></li>
+        <li><span class="no">3</span><span><code>rr-term</code> renders into a per-slide <strong>legend panel</strong> instead of a hover tooltip; definitions become citable fixtures, not apparitions.</span></li>
+      </ol>
+      <p class="m-top-3" style="max-width:44ch">Pick this direction and the next deck you read will place you before it teaches you.</p>
+    </div>
+  </div>
+</section>
+
+<footer class="hud">
+  <button class="hud-btn" data-nav="-1" aria-label="Previous slide">←</button>
+  <button class="hud-btn" data-nav="1" aria-label="Next slide">→</button>
+  <span class="hud-hint">← → · space · Home/End · click the rail</span>
+  <div class="hud-bar" aria-hidden="true"><i></i></div>
+  <span class="hud-count" id="hudCount">1 / 11</span>
+</footer>
+
+<script>
+  const slides = [...document.querySelectorAll(".slide")];
+  const rail = document.getElementById("rail");
+  const spinePos = document.getElementById("spinePos");
+  const hudCount = document.getElementById("hudCount");
+  const hudBar = document.querySelector(".hud-bar > i");
+  const pad = (n) => String(n).padStart(2, "0");
+
+  slides.forEach((s, j) => {
+    const b = document.createElement("button");
+    b.className = "spine-tick";
+    b.setAttribute("aria-label", "Slide " + (j + 1) + ": " + s.dataset.spine);
+    b.innerHTML = '<span class="spine-lab">' + s.dataset.spine + "</span>";
+    b.addEventListener("click", () => show(j));
+    rail.append(b);
+  });
+  const ticks = [...rail.children];
+
+  let i = -1;
+  function show(n) {
+    const next = Math.max(0, Math.min(slides.length - 1, n));
+    if (next === i) return;
+    i = next;
+    slides.forEach((s, j) => s.classList.toggle("active", j === i));
+    ticks.forEach((t, j) => t.setAttribute("aria-current", j === i ? "true" : "false"));
+    spinePos.textContent = pad(i + 1) + " / " + pad(slides.length);
+    hudCount.textContent = (i + 1) + " / " + slides.length;
+    hudBar.style.width = ((i + 1) / slides.length) * 100 + "%";
+    history.replaceState(null, "", "#" + (i + 1));
+  }
+  addEventListener("keydown", (e) => {
+    if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+    if (e.target.tagName === "BUTTON" && e.key === " ") return; // space activates the focused control
+    if (["ArrowRight", "ArrowDown", " ", "PageDown"].includes(e.key)) { e.preventDefault(); show(i + 1); }
+    else if (["ArrowLeft", "ArrowUp", "PageUp"].includes(e.key)) { e.preventDefault(); show(i - 1); }
+    else if (e.key === "Home") show(0);
+    else if (e.key === "End") show(slides.length - 1);
+  });
+  document.querySelectorAll("[data-nav]").forEach((b) => b.addEventListener("click", () => show(i + +b.dataset.nav)));
+  document.querySelectorAll("[data-goto]").forEach((a) => a.addEventListener("click", (e) => { e.preventDefault(); show(+a.dataset.goto - 1); }));
+  addEventListener("hashchange", () => show((parseInt(location.hash.slice(1), 10) || 1) - 1));
+  show((parseInt(location.hash.slice(1), 10) || 1) - 1);
+
+  // legend lookup: terms light their definition
+  document.querySelectorAll(".term").forEach((t) => {
+    const hit = document.querySelector('.legend-item[data-def="' + t.dataset.term + '"]');
+    if (!hit) return;
+    const on = () => { t.classList.add("term-hot"); hit.classList.add("legend-lit"); };
+    const off = () => { t.classList.remove("term-hot"); hit.classList.remove("legend-lit"); };
+    t.addEventListener("mouseenter", on); t.addEventListener("mouseleave", off);
+    t.addEventListener("focus", on); t.addEventListener("blur", off);
+  });
+
+  // self-check
+  document.querySelectorAll(".quiz").forEach((q) => {
+    q.querySelectorAll(".choice").forEach((c) => c.addEventListener("click", () => {
+      if (q.classList.contains("quiz-done")) return;
+      c.classList.add("choice-picked");
+      q.classList.add("quiz-done");
+    }));
+  });
+</script>
+</body>
+</html>

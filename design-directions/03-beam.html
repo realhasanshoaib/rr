@@ -1,0 +1,557 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Beam — a design direction for the Reading Room</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    /* morning */
+    --bg: #f6f4f7; --ink: #2a2733; --muted: #8b8695;
+    --line: #e4e0e8; --surface: #efecf2;
+    --iris: #6d5ae0; --amber: #b07a1e; --green: #4a7d63; --red: #c25049;
+    /* rhythm: 12px beat */
+    --s1: 6px; --s2: 12px; --s3: 24px; --s4: 36px; --s5: 48px; --s6: 72px; --s7: 96px;
+    /* type */
+    --f-display: ui-rounded, "SF Pro Rounded", "Avenir Next Rounded", ui-sans-serif, sans-serif;
+    --f-body: "Seravek", "Avenir Next", ui-sans-serif, -apple-system, sans-serif;
+    --f-code: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { /* dusk study */
+      --bg: #232030; --ink: #eee9e1; --muted: #9a92a6;
+      --line: #383447; --surface: #2b2839;
+      --iris: #a394ff; --amber: #cfa04d; --green: #6ea287; --red: #d76e66;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 19px/1.75 var(--f-body); -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3 { font-family: var(--f-display); font-weight: 600; line-height: 1.25; margin: 0; }
+  h1 { font-size: 3rem; letter-spacing: -.01em; }
+  h2 { font-size: 1.9rem; margin-bottom: .6rem; }
+  h3 { font-size: 1.1rem; margin-bottom: .25rem; }
+  p { margin: .4rem 0; }
+  a { color: var(--iris); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code, pre { font-family: var(--f-code); font-size: .82rem; line-height: 1.6; }
+  code { background: var(--surface); border-radius: 6px; padding: .1rem .4rem; }
+  pre { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 1rem 1.25rem; overflow-x: auto; margin: .8rem 0; }
+  pre code { background: none; padding: 0; }
+  :focus-visible { outline: 2px solid var(--iris); outline-offset: 2px; border-radius: 4px; }
+
+  /* deck */
+  .slide {
+    display: none; min-height: 100dvh; padding: 3.5rem 1.5rem 6.5rem;
+    grid-template-columns: 1fr min(680px, 100%) 1fr; align-content: center; row-gap: .35rem;
+  }
+  .slide.active { display: grid; overflow-y: auto; }
+  .slide > * { grid-column: 2; min-width: 0; }
+  .slide > .wide { grid-column: 1 / -1; width: min(1020px, calc(100% - 3rem)); justify-self: center; }
+  .kicker {
+    font-size: .78rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--iris); margin: 0 0 .5rem;
+  }
+  .lede { color: var(--muted); margin: 0 0 .6rem; }
+  .statement { font-size: 1.7rem; line-height: 1.4; font-weight: 500; max-width: 30ch; margin: .6rem 0; }
+  .caption { color: var(--muted); font-size: .84rem; }
+
+  /* the beam: steps */
+  .step { visibility: hidden; transition: color .15s ease-out; }
+  .step.is-shown { visibility: visible; }
+  .step.is-done, .step.is-done * { color: var(--muted); }
+  .beam-dots { display: flex; gap: 7px; margin: .2rem 0 .8rem; }
+  .beam-dots i {
+    width: 9px; height: 9px; border-radius: 999px;
+    border: 1.5px solid var(--line); background: transparent; transition: background .15s ease-out;
+  }
+  .beam-dots i.on { background: var(--iris); border-color: var(--iris); }
+  .hint { color: var(--muted); font-size: .84rem; margin: 0 0 .6rem; }
+  .hint b { color: var(--iris); font-weight: 600; }
+
+  /* surfaces */
+  .chunk { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 1.1rem 1.3rem; margin: .5rem 0; }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: .7rem; margin: .5rem 0; }
+  .tile { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: .9rem 1.1rem; }
+  .tile b { display: block; font-family: var(--f-display); font-size: 1.5rem; font-weight: 600; }
+  .tile span { color: var(--muted); font-size: .84rem; }
+  .cols2 { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; }
+  @media (max-width: 700px) { .cols2 { grid-template-columns: 1fr; } }
+  .callout {
+    background: color-mix(in srgb, var(--iris) 9%, var(--bg));
+    border: 1px solid color-mix(in srgb, var(--iris) 30%, var(--line));
+    border-radius: 16px; padding: .8rem 1.1rem; margin: .5rem 0;
+  }
+  .callout.amber { background: color-mix(in srgb, var(--amber) 10%, var(--bg)); border-color: color-mix(in srgb, var(--amber) 32%, var(--line)); }
+  .badge {
+    display: inline-block; padding: .1rem .7rem; border-radius: 999px; font-size: .74rem; font-weight: 600;
+    border: 1.5px solid var(--line); color: var(--muted);
+  }
+  .badge.iris  { color: var(--iris);  border-color: var(--iris); }
+  .badge.green { color: var(--green); border-color: var(--green); }
+  .badge.amber { color: var(--amber); border-color: var(--amber); }
+  .badge.red   { color: var(--red);   border-color: var(--red); }
+  .progress { height: 8px; background: var(--line); border-radius: 999px; overflow: hidden; margin: .3rem 0; }
+  .progress > i { display: block; height: 100%; width: 0; background: var(--iris); border-radius: 999px; }
+
+  /* terms: expand in place */
+  .term {
+    display: inline; font: inherit; color: inherit; background: none; border: none; padding: 0;
+    border-bottom: 1.5px dotted var(--iris); cursor: pointer;
+  }
+  .term .def { display: none; }
+  .term.is-open .def {
+    display: inline; font-size: .92em; color: var(--ink);
+    background: color-mix(in srgb, var(--iris) 12%, transparent);
+    border-radius: 6px; padding: 0 .35em; margin-left: .3em;
+  }
+  details { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: .6rem 1.1rem; margin: .6rem 0; }
+  summary { cursor: pointer; color: var(--muted); font-size: .9rem; }
+  details[open] summary { margin-bottom: .4rem; }
+
+  /* recall cards */
+  .recall {
+    display: grid; width: 100%; text-align: left; font: inherit; color: inherit; cursor: pointer;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 1.1rem 1.3rem;
+    box-shadow: 0 6px 22px color-mix(in srgb, var(--ink) 9%, transparent);
+  }
+  .recall-face { grid-area: 1 / 1; transition: opacity .15s ease-out, visibility .15s; }
+  .recall .back { opacity: 0; visibility: hidden; }
+  .recall.is-flipped .front { opacity: 0; visibility: hidden; }
+  .recall.is-flipped .back { opacity: 1; visibility: visible; }
+  .recall-tag { display: flex; align-items: center; gap: .4rem; color: var(--iris); font-size: .74rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; margin-bottom: .35rem; }
+
+  /* icons */
+  .icon { width: 1.25em; height: 1.25em; vertical-align: -.25em; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .icon-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: .7rem; margin: .6rem 0; }
+  .icon-cell { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: .9rem .5rem; text-align: center; }
+  .icon-cell svg { width: 30px; height: 30px; display: block; margin: 0 auto .35rem; }
+  .icon-cell span { color: var(--muted); font-size: .74rem; font-family: var(--f-code); }
+  .icon-demo { width: 132px; height: 132px; display: block; }
+
+  /* palette */
+  .pal { border-radius: 16px; padding: 1.1rem 1.2rem; border: 1px solid var(--line); }
+  .pal h3 { margin-bottom: .5rem; }
+  .pal-morning { background: #f6f4f7; color: #2a2733; border-color: #e4e0e8; }
+  .pal-dusk { background: #232030; color: #eee9e1; border-color: #383447; }
+  .chips { display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem; }
+  .chip { border-radius: 10px; padding: .45rem .6rem; font-family: var(--f-code); font-size: .68rem; border: 1px solid transparent; }
+  .sem { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: .7rem; }
+
+  /* spacing slide */
+  .beat { display: flex; align-items: center; gap: .8rem; margin: .3rem 0; }
+  .beat i { display: block; height: 12px; border-radius: 4px; background: color-mix(in srgb, var(--iris) 35%, var(--surface)); }
+  .beat code { min-width: 8.5rem; background: none; padding: 0; color: var(--muted); }
+  .anatomy { display: grid; grid-template-columns: 1fr minmax(240px, 30rem) 1fr; gap: var(--s2); border: 1px dashed var(--line); border-radius: 16px; padding: var(--s3); margin: .6rem 0; }
+  .anatomy .zone { display: grid; place-items: center; color: var(--muted); font-size: .74rem; border: 1px dashed var(--line); border-radius: 12px; padding: .5rem; text-align: center; }
+  .anatomy .focus { background: color-mix(in srgb, var(--iris) 9%, transparent); border: 1px solid color-mix(in srgb, var(--iris) 30%, var(--line)); border-radius: 12px; padding: var(--s3); text-align: center; }
+
+  /* beam state demo */
+  .state-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: .8rem; margin: .6rem 0; }
+  .state { border-radius: 16px; padding: .9rem 1rem; border: 1px solid var(--line); background: var(--surface); }
+  .state.waiting { border-style: dashed; background: transparent; }
+  .state.waiting h3 { color: var(--muted); }
+  .state.waiting .ghost { display: block; height: 1.6rem; border-radius: 6px; background: color-mix(in srgb, var(--line) 40%, transparent); }
+  .state.current { border-color: color-mix(in srgb, var(--iris) 45%, var(--line)); }
+  .state.absorbed, .state.absorbed h3 { color: var(--muted); }
+  .state .caption { display: block; margin-top: .4rem; }
+
+  /* specimen */
+  .stage-row { display: flex; gap: .9rem; align-items: flex-start; margin: .55rem 0; }
+  .stage-row svg { flex: none; width: 26px; height: 26px; margin-top: .3rem; color: var(--iris); }
+
+  /* type specimen */
+  .spec { border-bottom: 1px solid var(--line); padding: .55rem 0; display: grid; grid-template-columns: 11rem 1fr; gap: 1rem; align-items: baseline; }
+  .spec .caption { font-family: var(--f-code); font-size: .7rem; }
+
+  /* toc */
+  .toc-list { list-style: none; padding: 0; margin: 1rem 0 0; display: grid; grid-template-columns: 1fr 1fr; gap: .3rem .5rem; }
+  .toc-list a { color: var(--ink); display: flex; gap: .6rem; align-items: baseline; padding: .15rem 0; }
+  .toc-list a:hover { color: var(--iris); text-decoration: none; }
+  .toc-list em { font-style: normal; font-family: var(--f-code); font-size: .72rem; color: var(--iris); }
+
+  /* HUD */
+  .hud {
+    position: fixed; left: 50%; bottom: 1.1rem; transform: translateX(-50%); z-index: 20;
+    display: flex; align-items: center; gap: .8rem; padding: .45rem .7rem;
+    background: color-mix(in srgb, var(--bg) 82%, transparent); backdrop-filter: blur(10px);
+    border: 1px solid var(--line); border-radius: 999px;
+  }
+  .hud button {
+    width: 2rem; height: 2rem; border-radius: 999px; border: 1px solid var(--line);
+    background: var(--surface); color: var(--ink); font: inherit; cursor: pointer; line-height: 1;
+  }
+  .hud button:hover { border-color: var(--iris); color: var(--iris); }
+  .hud-progress { width: 150px; height: 4px; border-radius: 999px; background: var(--line); overflow: hidden; }
+  .hud-progress > i { display: block; height: 100%; width: 0; background: var(--iris); }
+  .counter { font-family: var(--f-code); font-size: .72rem; color: var(--muted); min-width: 3.4rem; text-align: center; }
+
+  ul { margin: .4rem 0; padding-left: 1.2rem; }
+  li { margin: .3rem 0; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+<svg style="display:none" aria-hidden="true">
+  <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3.5v4.2M12 16.3v4.2M3.5 12h4.2M16.3 12h4.2M6.3 6.3l2.9 2.9M14.8 14.8l2.9 2.9M17.7 6.3l-2.9 2.9M9.2 14.8l-2.9 2.9"/></symbol>
+  <symbol id="i-loop" viewBox="0 0 24 24"><path d="M20.4 8.5A9 9 0 1 0 21 12"/><polyline points="21 3.5 21 8.5 16 8.5"/></symbol>
+  <symbol id="i-flip" viewBox="0 0 24 24"><rect x="3" y="7.5" width="13" height="13" rx="3.5"/><path d="M8 4h9.5A3.5 3.5 0 0 1 21 7.5V17"/></symbol>
+  <symbol id="i-steps" viewBox="0 0 24 24"><circle cx="5" cy="12" r="2.1"/><circle cx="12" cy="12" r="2.1"/><circle cx="19" cy="12" r="2.1"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><polyline points="4.5 13 9.8 18.2 19.5 6.5"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><path d="M9 5.5v13M15 5.5v13"/></symbol>
+  <symbol id="i-bulb" viewBox="0 0 24 24"><path d="M12 3a6.2 6.2 0 0 1 3.8 11.1c-.5.4-.8 1-.8 1.6v.8H9v-.8c0-.6-.3-1.2-.8-1.6A6.2 6.2 0 0 1 12 3z"/><path d="M9.8 20.5h4.4"/></symbol>
+  <symbol id="i-cycle" viewBox="0 0 24 24"><path d="M4.6 9a8 8 0 0 1 13.5-2.6L19.5 8"/><polyline points="19.5 3.2 19.5 8 14.7 8"/><path d="M19.4 15a8 8 0 0 1-13.5 2.6L4.5 16"/><polyline points="4.5 20.8 4.5 16 9.3 16"/></symbol>
+</svg>
+
+<!-- 1 · Title -->
+<section class="slide">
+  <p class="kicker">Design direction 03 · Proposal for the rr kit · 2026-07-23</p>
+  <h1><svg class="icon" style="width:.9em;height:.9em;color:var(--iris)"><use href="#i-spark"/></svg> Beam</h1>
+  <p class="statement">One idea at full contrast. Everything else waits.</p>
+  <p class="lede">A design system for learning, built on two facts: attention is the bottleneck, and memory is made by retrieval. Step through with <b>→</b>.</p>
+  <ol class="toc-list">
+    <li><a href="#2" data-goto="2"><em>02</em> Philosophy</a></li>
+    <li><a href="#3" data-goto="3"><em>03</em> Typography</a></li>
+    <li><a href="#4" data-goto="4"><em>04</em> Color &amp; tokens</a></li>
+    <li><a href="#5" data-goto="5"><em>05</em> Spacing &amp; layout</a></li>
+    <li><a href="#6" data-goto="6"><em>06</em> Iconography</a></li>
+    <li><a href="#7" data-goto="7"><em>07</em> Components</a></li>
+    <li><a href="#8" data-goto="8"><em>08</em> Terms &amp; recall</a></li>
+    <li><a href="#9" data-goto="9"><em>09</em> Specimen lesson</a></li>
+    <li><a href="#10" data-goto="10"><em>10</em> The beam</a></li>
+    <li><a href="#11" data-goto="11"><em>11</em> Adoption</a></li>
+  </ol>
+</section>
+
+<!-- 2 · Philosophy -->
+<section class="slide">
+  <p class="kicker">02 · Philosophy</p>
+  <h2>Three commitments</h2>
+  <div class="beam-dots" aria-hidden="true"></div>
+  <p class="hint">Press <b>→</b> — this deck arrives one idea at a time. That pacing is the proposal.</p>
+  <div class="step chunk">
+    <h3><svg class="icon"><use href="#i-spark"/></svg> Attention is the bottleneck</h3>
+    <p>A slide never competes with itself. One idea per beat, set large in a narrow column; everything that isn't the current idea is either absorbed (dimmed) or not yet on stage.</p>
+  </div>
+  <div class="step chunk">
+    <h3><svg class="icon"><use href="#i-loop"/></svg> Memory is made by retrieval</h3>
+    <p>Reading feels like knowing — it isn't. Every chapter ends with recall cards that ask before they tell, because the check is what writes the memory.</p>
+  </div>
+  <div class="step chunk">
+    <h3><svg class="icon"><use href="#i-pause"/></svg> Pace belongs to the reader</h3>
+    <p>Nothing autoplays and nothing animates in. The arrow key is a metronome you hold: the pause between presses is thinking time the design deliberately protects.</p>
+  </div>
+</section>
+
+<!-- 3 · Typography -->
+<section class="slide">
+  <p class="kicker">03 · Typography</p>
+  <h2>Soft voice, big floor</h2>
+  <p class="lede">Two system faces, zero downloads. Rounded display for warmth at size; a humanist body face at a 19px floor because learning text should never be squinted at.</p>
+  <div class="spec"><span class="caption">display · SF Rounded 600</span><span style="font-family:var(--f-display);font-size:2.1rem;font-weight:600;line-height:1.2">Absorb one idea</span></div>
+  <div class="spec"><span class="caption">statement · Seravek 1.7rem</span><span class="statement" style="margin:0">A claim big enough to sit alone.</span></div>
+  <div class="spec"><span class="caption">body · Seravek 19px/1.75</span><span>Body text carries the teaching. Generous leading, ~54 characters per line, never justified.</span></div>
+  <div class="spec"><span class="caption">caption · .84rem muted</span><span class="caption">Captions annotate; they never carry the main point.</span></div>
+  <div class="spec"><span class="caption">code · SF Mono .82rem</span><code>node build.mjs doc.rr.html</code></div>
+  <p class="caption" style="margin-top:.8rem">Scale: 3rem title · 1.9rem slide head · 1.7rem statement · 1.1rem card head · 1rem body · .84rem caption. Weight moves before size; size moves before color.</p>
+</section>
+
+<!-- 4 · Color -->
+<section class="slide">
+  <p class="kicker">04 · Color &amp; tokens</p>
+  <h2>Morning and dusk</h2>
+  <p class="lede">One identity color — iris, the memory color — plus three semantics. Dark mode is the hero: a warm plum dusk for evening reading, never near-black.</p>
+  <div class="cols2 wide" style="max-width:860px;justify-self:center">
+    <div class="pal pal-morning">
+      <h3>Morning <span class="caption" style="color:#8b8695">· light</span></h3>
+      <div class="chips">
+        <div class="chip" style="background:#f6f4f7;border-color:#e4e0e8;color:#2a2733">bg f6f4f7</div>
+        <div class="chip" style="background:#2a2733;color:#f6f4f7">ink 2a2733</div>
+        <div class="chip" style="background:#efecf2;border-color:#e4e0e8;color:#2a2733">surface efecf2</div>
+        <div class="chip" style="background:#e4e0e8;color:#2a2733">line e4e0e8</div>
+        <div class="chip" style="background:#8b8695;color:#f6f4f7">muted 8b8695</div>
+        <div class="chip" style="background:#6d5ae0;color:#fff">iris 6d5ae0</div>
+      </div>
+    </div>
+    <div class="pal pal-dusk">
+      <h3>Dusk <span class="caption" style="color:#9a92a6">· dark, the hero</span></h3>
+      <div class="chips">
+        <div class="chip" style="background:#232030;border-color:#383447;color:#eee9e1">bg 232030</div>
+        <div class="chip" style="background:#eee9e1;color:#232030">ink eee9e1</div>
+        <div class="chip" style="background:#2b2839;border-color:#383447;color:#eee9e1">surface 2b2839</div>
+        <div class="chip" style="background:#383447;color:#eee9e1">line 383447</div>
+        <div class="chip" style="background:#9a92a6;color:#232030">muted 9a92a6</div>
+        <div class="chip" style="background:#a394ff;color:#232030">iris a394ff</div>
+      </div>
+    </div>
+  </div>
+  <div class="sem">
+    <span class="badge iris">iris — identity &amp; emphasis</span>
+    <span class="badge amber">amber — open decision</span>
+    <span class="badge green">green — done</span>
+    <span class="badge red">red — hard failure only</span>
+  </div>
+  <p class="caption">No gradients, no acid accents. Emphasis is contrast against dimness, so one violet is enough.</p>
+</section>
+
+<!-- 5 · Spacing -->
+<section class="slide">
+  <p class="kicker">05 · Spacing &amp; layout</p>
+  <h2>A 12px beat</h2>
+  <p class="lede">Every gap is a multiple of one beat, so rhythm is felt rather than noticed.</p>
+  <div>
+    <div class="beat"><code>--s1 · 6px · ½ beat</code><i style="width:6px"></i></div>
+    <div class="beat"><code>--s2 · 12px · 1 beat</code><i style="width:12px"></i></div>
+    <div class="beat"><code>--s3 · 24px · 2 beats</code><i style="width:24px"></i></div>
+    <div class="beat"><code>--s4 · 36px · 3 beats</code><i style="width:36px"></i></div>
+    <div class="beat"><code>--s5 · 48px · 4 beats</code><i style="width:48px"></i></div>
+    <div class="beat"><code>--s6 · 72px · 6 beats</code><i style="width:72px"></i></div>
+    <div class="beat"><code>--s7 · 96px · 8 beats</code><i style="width:96px"></i></div>
+  </div>
+  <div class="anatomy">
+    <div class="zone">quiet<br>margin</div>
+    <div class="focus"><b>focus column</b><br><span class="caption">~54ch reading · ~30ch statements<br>one idea, centered vertically</span></div>
+    <div class="zone">quiet<br>margin</div>
+  </div>
+  <p class="caption">Cards round at 16px — soft enough to feel like flashcards, firm enough to stack. Borders over shadows; the only shadow in the system sits under recall cards.</p>
+</section>
+
+<!-- 6 · Icons -->
+<section class="slide">
+  <p class="kicker">06 · Iconography</p>
+  <h2>Drawn round, drawn light</h2>
+  <p class="lede">24-unit grid, 2px stroke, fully round caps and joins — the icons share the display face's geometry. Inline sprite only; the build tree-shakes it.</p>
+  <div class="icon-grid">
+    <div class="icon-cell"><svg class="icon"><use href="#i-spark"/></svg><span>spark</span></div>
+    <div class="icon-cell"><svg class="icon"><use href="#i-loop"/></svg><span>loop</span></div>
+    <div class="icon-cell"><svg class="icon"><use href="#i-flip"/></svg><span>flip</span></div>
+    <div class="icon-cell"><svg class="icon"><use href="#i-steps"/></svg><span>steps</span></div>
+    <div class="icon-cell"><svg class="icon"><use href="#i-check"/></svg><span>check</span></div>
+    <div class="icon-cell"><svg class="icon"><use href="#i-pause"/></svg><span>pause</span></div>
+    <div class="icon-cell"><svg class="icon"><use href="#i-bulb"/></svg><span>bulb</span></div>
+    <div class="icon-cell"><svg class="icon"><use href="#i-cycle"/></svg><span>cycle</span></div>
+  </div>
+  <div class="cols2">
+    <div class="chunk" style="margin:0"><h3 style="color:var(--green)"><svg class="icon"><use href="#i-check"/></svg> Do</h3><p class="caption" style="margin:0">Round caps, open shapes, 2px stroke, currentColor so icons dim with their step.</p></div>
+    <div class="chunk" style="margin:0"><h3 style="color:var(--red)">✕ Don't</h3><p class="caption" style="margin:0">No filled glyphs, no sharp miters, no second stroke weight, no decorative color.</p></div>
+  </div>
+</section>
+
+<!-- 7 · Components -->
+<section class="slide">
+  <p class="kicker">07 · Components</p>
+  <h2>Same jobs, softer bodies</h2>
+  <p class="lede">Every rr component keeps its job; the language changes to chunked, rounded, one-per-glance.</p>
+  <div class="tiles">
+    <div class="tile"><b>1</b><span>idea per beat</span></div>
+    <div class="tile"><b>19px</b><span>body-size floor</span></div>
+    <div class="tile"><b>150ms</b><span>motion ceiling</span></div>
+  </div>
+  <div class="cols2">
+    <div class="chunk" style="margin:0">
+      <h3>Chunk card</h3>
+      <p class="caption" style="margin:0">The base surface. One heading, one point, sized to be read in a single fixation group.</p>
+    </div>
+    <div>
+      <div class="callout" style="margin:0 0 .5rem"><b>Callout.</b> <span class="caption">Iris tint — context worth pausing on.</span></div>
+      <div class="callout amber" style="margin:0"><b>Open decision.</b> <span class="caption">Amber tint — the reader owes an answer.</span></div>
+    </div>
+  </div>
+  <p style="margin:.6rem 0 .2rem"><span class="badge iris">proposal</span> <span class="badge green">shipped</span> <span class="badge amber">deciding</span> <span class="badge red">failed</span></p>
+  <p class="caption" style="margin:0 0 .2rem">Recall coverage — 4 of 6 chapters checked</p>
+  <div class="progress"><i style="width:66%"></i></div>
+  <p class="caption">A bar never appears without its words; a number never appears without its unit.</p>
+</section>
+
+<!-- 8 · Terms & recall -->
+<section class="slide">
+  <p class="kicker">08 · Terms &amp; recall</p>
+  <h2>Knowledge you can poke</h2>
+  <p class="lede">Definitions open in place — a tap, not a hover — so touch works and nothing is hidden behind a pointer. And quizzes become recall cards: ask first, reveal second.</p>
+  <div class="chunk">
+    <p style="margin:0">The build <button class="term" aria-expanded="false">tree-shakes<span class="def">keeps only the icons a document actually uses, dropping the rest of the sprite</span></button> the icon sprite and emits one <button class="term" aria-expanded="false">self-contained<span class="def">zero external requests — the file opens from disk, offline, forever</span></button> HTML file. <span class="caption">← tap the dotted terms</span></p>
+  </div>
+  <details>
+    <summary>Optional depth stays foldable — collapsibles survive unchanged</summary>
+    <p class="caption" style="margin:0">Deep dives, traces, and source blocks live behind a fold so the main line of a slide stays one idea long.</p>
+  </details>
+  <div class="cols2">
+    <button class="recall" aria-pressed="false">
+      <span class="recall-face front">
+        <span class="recall-tag"><svg class="icon"><use href="#i-flip"/></svg> Recall</span>
+        <span>What does the build do when it meets an unknown component or prop?</span>
+        <span class="caption" style="display:block;margin-top:.5rem">tap to check</span>
+      </span>
+      <span class="recall-face back">
+        <span class="recall-tag"><svg class="icon"><use href="#i-check"/></svg> Answer</span>
+        <span>It fails loudly and stops.</span>
+        <span class="caption" style="display:block;margin-top:.5rem">Why it matters: a silent fallback would let off-system documents ship.</span>
+      </span>
+    </button>
+    <button class="recall" aria-pressed="false">
+      <span class="recall-face front">
+        <span class="recall-tag"><svg class="icon"><use href="#i-flip"/></svg> Recall</span>
+        <span>Why steps instead of a scrolling page?</span>
+        <span class="caption" style="display:block;margin-top:.5rem">tap to check</span>
+      </span>
+      <span class="recall-face back">
+        <span class="recall-tag"><svg class="icon"><use href="#i-check"/></svg> Answer</span>
+        <span>Steps create pauses, and pauses are where retrieval happens.</span>
+        <span class="caption" style="display:block;margin-top:.5rem">Why it matters: scroll speed is set by the hand; step pace is set by understanding.</span>
+      </span>
+    </button>
+  </div>
+</section>
+
+<!-- 9 · Specimen -->
+<section class="slide">
+  <p class="kicker">09 · Specimen — a real lesson in this system</p>
+  <h2>What happens when you run <code style="font-size:.6em;vertical-align:.15em">node build.mjs doc.rr.html</code></h2>
+  <div class="beam-dots" aria-hidden="true"></div>
+  <p class="hint">Five stages. <b>→</b> reveals each; the previous stage dims but stays for reference.</p>
+  <div class="step stage-row"><svg class="icon"><use href="#i-spark"/></svg><p style="margin:0"><b>Expand.</b> Every <code>&lt;rr-*&gt;</code> tag is matched to its component template; props become attributes, children slot into place.</p></div>
+  <div class="step stage-row"><svg class="icon"><use href="#i-pause"/></svg><p style="margin:0"><b>Validate.</b> An unknown component, a missing prop, or an icon that isn't in the set fails the build loudly. That's the point — the system can't drift quietly.</p></div>
+  <div class="step stage-row"><svg class="icon"><use href="#i-cycle"/></svg><p style="margin:0"><b>Tree-shake.</b> The icon sprite is cut down to only the symbols this document uses.</p></div>
+  <div class="step stage-row"><svg class="icon"><use href="#i-bulb"/></svg><p style="margin:0"><b>Inline.</b> The canonical stylesheet — both themes, every token — is embedded in the head. No requests, no drift.</p></div>
+  <div class="step stage-row"><svg class="icon"><use href="#i-check"/></svg><p style="margin:0"><b>Emit.</b> One polished, self-contained HTML lands beside the source. It opens from disk, today or in five years.</p></div>
+</section>
+
+<!-- 10 · Signature -->
+<section class="slide">
+  <p class="kicker">10 · The signature — the beam</p>
+  <h2>Three states, one key</h2>
+  <p class="lede">Dimming keeps context without competition: absorbed ideas stay legible for reference, the current idea owns the contrast, and the pause between key presses is where retrieval happens.</p>
+  <div class="state-row">
+    <div class="state absorbed"><h3>Absorbed</h3><p class="caption" style="margin:0;display:block">Dropped to muted ink — still readable, no longer loud.</p></div>
+    <div class="state current"><h3>Current</h3><span class="caption" style="color:var(--iris)">Full ink, full contrast. The only thing the eye is asked to hold.</span></div>
+    <div class="state waiting"><h3>Waiting</h3><span class="ghost" aria-hidden="true"></span><span class="caption" style="display:block;margin-top:.4rem">Holds its space invisibly — no layout shift when it arrives.</span></div>
+  </div>
+  <ul class="caption" style="list-style:none;padding:0">
+    <li><b style="color:var(--ink)">→</b> reveals the next step before it advances the slide; <b style="color:var(--ink)">←</b> takes steps back first.</li>
+    <li>State changes are contrast changes — nothing moves, nothing slides in, ≤150ms, and pure swaps under reduced motion.</li>
+    <li>Iris dots under the title show where you are inside the slide; the HUD shows where you are in the deck.</li>
+  </ul>
+</section>
+
+<!-- 11 · Adoption -->
+<section class="slide">
+  <p class="kicker">11 · Adoption</p>
+  <h2>What changes in the kit</h2>
+  <pre><code>:root {
+  /* morning */
+  --bg:#f6f4f7;  --ink:#2a2733;  --muted:#8b8695;
+  --line:#e4e0e8; --surface:#efecf2;
+  --iris:#6d5ae0; --amber:#b07a1e; --green:#4a7d63; --red:#c25049;
+  /* rhythm: one 12px beat */
+  --s1:6px; --s2:12px; --s3:24px; --s4:36px; --s5:48px; --s6:72px; --s7:96px;
+  /* voices */
+  --f-display: ui-rounded, "SF Pro Rounded", ui-sans-serif, sans-serif;
+  --f-body: "Seravek", "Avenir Next", ui-sans-serif, sans-serif;
+  --f-code: ui-monospace, "SF Mono", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root { /* dusk study */
+    --bg:#232030;  --ink:#eee9e1;  --muted:#9a92a6;
+    --line:#383447; --surface:#2b2839;
+    --iris:#a394ff; --amber:#cfa04d; --green:#6ea287; --red:#d76e66;
+  }
+}</code></pre>
+  <ul>
+    <li><b>New components:</b> <code>rr-steps</code>/<code>rr-step</code> bring the beam to any deck slide; <code>rr-recall</code> replaces <code>rr-quiz</code> with flip-to-reveal cards.</li>
+    <li><b>New voice:</b> rounded display + Seravek body at a 19px floor; iris replaces Notion blue as the identity color; terms open in place instead of on hover.</li>
+    <li><b>Unchanged:</b> self-contained builds, both themes, borders over shadows, amber/green/red semantics, calm reader-triggered motion.</li>
+  </ul>
+  <p class="statement" style="font-size:1.35rem">If you remember one thing: the pause is the feature.</p>
+</section>
+
+<footer class="hud">
+  <button data-nav="-1" aria-label="Previous">←</button>
+  <div class="hud-progress"><i></i></div>
+  <span class="counter"></span>
+  <button data-nav="1" aria-label="Next">→</button>
+</footer>
+
+<script>
+  const slides = [...document.querySelectorAll(".slide")];
+  const deck = slides.map((el) => ({
+    el,
+    steps: [...el.querySelectorAll(".step")],
+    dots: el.querySelector(".beam-dots"),
+    revealed: 0,
+  }));
+  deck.forEach((s) => {
+    if (s.dots) s.steps.forEach(() => s.dots.appendChild(document.createElement("i")));
+  });
+  const bar = document.querySelector(".hud-progress > i");
+  const counter = document.querySelector(".counter");
+  let i = -1;
+
+  function renderSteps(s) {
+    s.steps.forEach((el, j) => {
+      el.classList.toggle("is-shown", j < s.revealed);
+      el.classList.toggle("is-done", j < s.revealed - 1);
+    });
+    if (s.dots) [...s.dots.children].forEach((d, j) => d.classList.toggle("on", j < s.revealed));
+  }
+
+  function show(n, fromBehind) {
+    const next = Math.max(0, Math.min(slides.length - 1, n));
+    if (next === i) return;
+    i = next;
+    deck.forEach((s, j) => s.el.classList.toggle("active", j === i));
+    const s = deck[i];
+    if (fromBehind) s.revealed = s.steps.length;
+    renderSteps(s);
+    bar.style.width = ((i + 1) / slides.length) * 100 + "%";
+    counter.textContent = (i + 1) + " / " + slides.length;
+    history.replaceState(null, "", "#" + (i + 1));
+  }
+
+  function fwd() {
+    const s = deck[i];
+    if (s.revealed < s.steps.length) { s.revealed++; renderSteps(s); }
+    else show(i + 1, false);
+  }
+  function back() {
+    const s = deck[i];
+    if (s.revealed > 0) { s.revealed--; renderSteps(s); }
+    else show(i - 1, true);
+  }
+
+  addEventListener("keydown", (e) => {
+    const t = e.target.tagName;
+    if (/^(INPUT|TEXTAREA|SELECT)$/.test(t)) return;
+    const isArrowish = ["ArrowRight", "ArrowDown", "ArrowLeft", "ArrowUp", "PageDown", "PageUp", "Home", "End"].includes(e.key);
+    if (t === "BUTTON" && !isArrowish) return; // space/enter belong to the button
+    if (["ArrowRight", "ArrowDown", " ", "PageDown"].includes(e.key)) { e.preventDefault(); fwd(); }
+    else if (["ArrowLeft", "ArrowUp", "PageUp"].includes(e.key)) { e.preventDefault(); back(); }
+    else if (e.key === "Home") { e.preventDefault(); show(0, false); }
+    else if (e.key === "End") { e.preventDefault(); show(slides.length - 1, true); }
+  });
+
+  document.querySelectorAll("[data-nav]").forEach((b) =>
+    b.addEventListener("click", () => (+b.dataset.nav > 0 ? fwd() : back())));
+  document.querySelectorAll("[data-goto]").forEach((a) =>
+    a.addEventListener("click", (e) => { e.preventDefault(); show(+a.dataset.goto - 1, false); }));
+  addEventListener("hashchange", () => show((parseInt(location.hash.slice(1), 10) || 1) - 1, false));
+
+  document.querySelectorAll(".recall").forEach((b) =>
+    b.addEventListener("click", () => {
+      b.classList.toggle("is-flipped");
+      b.setAttribute("aria-pressed", b.classList.contains("is-flipped"));
+    }));
+  document.querySelectorAll(".term").forEach((b) =>
+    b.addEventListener("click", () => {
+      b.classList.toggle("is-open");
+      b.setAttribute("aria-expanded", b.classList.contains("is-open"));
+    }));
+
+  show((parseInt(location.hash.slice(1), 10) || 1) - 1, false);
+</script>
+</body>
+</html>

@@ -1,0 +1,528 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Marginalia — a design direction for the Reading Room</title>
+<style>
+  :root {
+    --paper: #faf9f5; --ink: #26241f; --muted: #8a857a;
+    --line: #e6e2d8; --surface: #f2efe7;
+    --pen: #3a5f8a; --marker: #f5d90a;
+    --hl: color-mix(in srgb, #f5d90a 38%, transparent);
+    --amber: #b0730f; --green: #43705c; --red: #b5473f;
+    --serif: "Iowan Old Style", Palatino, Charter, Georgia, serif;
+    --sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --s1: .25rem; --s2: .5rem; --s3: .75rem; --s4: 1rem;
+    --s5: 1.5rem; --s6: 2rem; --s7: 3rem; --s8: 4rem;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #201e1a; --ink: #e8e4da; --muted: #97917f;
+      --line: #38342c; --surface: #2a2721;
+      --pen: #7fa5cf; --marker: #d9a91a;
+      --hl: color-mix(in srgb, #d9a91a 26%, transparent);
+      --amber: #c98f3d; --green: #6d9c82; --red: #cf6d63;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font: 18px/1.7 var(--serif); font-variant-numeric: oldstyle-nums;
+    -webkit-font-smoothing: antialiased;
+  }
+  :focus-visible { outline: 2px solid var(--pen); outline-offset: 2px; border-radius: 2px; }
+
+  /* ——— deck mechanics ——— */
+  .slide {
+    display: none; min-height: 100dvh;
+    padding: 3.5rem clamp(1.25rem, 4vw, 4rem) 5.5rem;
+    grid-template-columns: 1fr minmax(0, 58ch) 17rem 1fr;
+    column-gap: 2.5rem; align-content: center; align-items: start; row-gap: var(--s2);
+  }
+  .slide.active { display: grid; overflow-y: auto; }
+  .slide > * { grid-column: 2; min-width: 0; }
+  .slide > .margin { grid-column: 3; }
+  .slide > .span { grid-column: 2 / 4; }
+  @media (max-width: 1080px) {
+    .slide { grid-template-columns: 1fr minmax(0, 58ch) 1fr; }
+    .slide > .margin, .slide > .span { grid-column: 2; }
+    .margin { display: flex; flex-wrap: wrap; gap: var(--s3); }
+  }
+
+  .ribbon { position: fixed; inset: 0 auto auto 0; height: 3px; width: 0; background: var(--pen); z-index: 30; }
+  .hud {
+    position: fixed; inset: auto 0 0 0; z-index: 20;
+    display: flex; align-items: baseline; gap: var(--s4);
+    padding: var(--s2) var(--s5);
+    background: color-mix(in srgb, var(--paper) 90%, transparent);
+    backdrop-filter: blur(8px); border-top: 1px solid var(--line);
+  }
+  .hud .running { flex: 1; text-align: center; font: italic .85rem/1.4 var(--serif); color: var(--muted); }
+  .hud .counter { font: .95rem/1.4 var(--serif); font-variant-numeric: oldstyle-nums; color: var(--muted); min-width: 4.5ch; text-align: right; }
+  .hud button {
+    font: .8rem/1.2 var(--sans); color: var(--muted); background: none;
+    border: 1px solid var(--line); border-radius: 6px; padding: .3rem .8rem; cursor: pointer;
+  }
+  .hud button:hover { color: var(--ink); border-color: var(--muted); }
+
+  /* ——— voices ——— */
+  .kicker {
+    font: 600 .7rem/1.4 var(--sans); text-transform: uppercase; letter-spacing: .1em;
+    color: var(--pen); margin: 0 0 var(--s3);
+  }
+  h1 { font: 600 2.1rem/1.25 var(--serif); margin: 0 0 var(--s3); letter-spacing: -.01em; }
+  h2 { font: 600 1.5rem/1.3 var(--serif); margin: 0 0 var(--s4); letter-spacing: -.005em; }
+  h3 { font: 600 1.05rem/1.4 var(--serif); margin: var(--s5) 0 var(--s2); }
+  p { margin: 0 0 var(--s4); }
+  .lede { font-style: italic; font-size: 1.15rem; color: color-mix(in srgb, var(--ink) 80%, var(--muted)); }
+  a { color: var(--pen); text-decoration: none; }
+  a:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .caption { font: .8rem/1.5 var(--sans); color: var(--muted); }
+  code { font: .82em/1.6 var(--mono); background: var(--surface); border-radius: 4px; padding: .08rem .35rem; }
+  pre {
+    font: .82rem/1.65 var(--mono); background: var(--surface); border: 1px solid var(--line);
+    border-radius: 6px; padding: var(--s4) var(--s5); overflow-x: auto; margin: var(--s4) 0;
+  }
+  pre code { background: none; padding: 0; font-size: 1em; }
+
+  /* ——— the living margin ——— */
+  .ref {
+    font: 600 .72em/1 var(--sans); color: var(--pen);
+    vertical-align: super; padding-left: .1em; letter-spacing: 0;
+  }
+  .margin { font: .84rem/1.55 var(--sans); color: var(--muted); display: grid; gap: var(--s4); align-content: start; padding-top: .4rem; }
+  .note { border-top: 1px solid var(--line); padding-top: var(--s2); max-width: 17rem; }
+  .note b { color: var(--ink); font-weight: 600; }
+  .note-num { font: 600 .72rem/1 var(--sans); color: var(--pen); margin-right: .4em; }
+  .term { border-bottom: 1px dotted var(--muted); }
+
+  .hl {
+    background: var(--hl); border-radius: 2px;
+    padding: .05em .12em; margin: 0 -.06em;
+    -webkit-box-decoration-break: clone; box-decoration-break: clone;
+  }
+
+  /* ——— components ——— */
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: var(--s4) var(--s5); margin: var(--s4) 0; }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: var(--s3); margin: var(--s4) 0; }
+  .tile { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: var(--s3) var(--s4); margin: 0; }
+  .tile .value { font: 600 1.6rem/1.2 var(--serif); font-variant-numeric: oldstyle-nums; }
+  .tile .label { font: 600 .68rem/1.4 var(--sans); text-transform: uppercase; letter-spacing: .09em; color: var(--muted); }
+  .callout {
+    border: 1px solid var(--line); border-left: 3px solid var(--pen); background: var(--surface);
+    border-radius: 6px; padding: var(--s3) var(--s4); margin: var(--s4) 0;
+  }
+  .callout .who { font: italic .95rem/1.5 var(--serif); color: var(--pen); }
+  .callout.amber { border-left-color: var(--amber); } .callout.amber .who { color: var(--amber); }
+  .callout.red { border-left-color: var(--red); } .callout.red .who { color: var(--red); }
+  .badge {
+    display: inline-block; font: 600 .66rem/1.5 var(--sans); text-transform: uppercase; letter-spacing: .09em;
+    border: 1px solid var(--line); border-radius: 999px; padding: .08rem .6rem; color: var(--muted);
+  }
+  .badge.pen { color: var(--pen); border-color: var(--pen); }
+  .badge.green { color: var(--green); border-color: var(--green); }
+  .badge.amber { color: var(--amber); border-color: var(--amber); }
+  .badge.red { color: var(--red); border-color: var(--red); }
+  .progress-row { display: flex; align-items: baseline; gap: var(--s3); margin: var(--s3) 0; }
+  .progress-row .plabel { font: .95rem/1.4 var(--serif); min-width: 11ch; }
+  .progress { flex: 1; height: 4px; background: var(--line); border-radius: 2px; overflow: hidden; align-self: center; }
+  .progress > i { display: block; height: 100%; background: var(--green); }
+  .progress-row .pcount { font: .9rem/1.4 var(--serif); color: var(--muted); }
+  details.fold { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: var(--s2) var(--s4); margin: var(--s4) 0; }
+  details.fold summary { cursor: pointer; font: .84rem/1.6 var(--sans); color: var(--muted); }
+  details.fold[open] summary { margin-bottom: var(--s2); }
+
+  /* ——— quiz ——— */
+  .quiz { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: var(--s4) var(--s5); margin: var(--s4) 0; }
+  .quiz .q { font: 600 1rem/1.5 var(--serif); margin: 0 0 var(--s3); }
+  .choice {
+    display: block; width: 100%; text-align: left; font: .95rem/1.5 var(--serif); color: var(--ink);
+    background: var(--paper); border: 1px solid var(--line); border-radius: 6px;
+    padding: var(--s2) var(--s4); margin: 0 0 var(--s2); cursor: pointer;
+  }
+  .choice:hover { border-color: var(--muted); }
+  .choice.is-right { border-color: var(--green); color: var(--green); }
+  .choice.is-wrong { border-color: var(--red); color: var(--red); }
+  .why { display: none; border-top: 1px solid var(--line); margin-top: var(--s3); padding-top: var(--s3); font: .84rem/1.55 var(--sans); color: var(--muted); }
+  .quiz.answered .why { display: block; }
+
+  /* ——— toc ——— */
+  .toc { list-style: none; counter-reset: toc; padding: 0; margin: var(--s5) 0 0; columns: 2; column-gap: var(--s6); font-size: 1.02rem; }
+  .toc li { counter-increment: toc; margin-bottom: var(--s2); break-inside: avoid; }
+  .toc li::before { content: counter(toc, decimal-leading-zero); font: 600 .7rem/1 var(--sans); color: var(--muted); margin-right: .7em; }
+  .toc a { color: var(--ink); }
+  .toc a:hover { color: var(--pen); text-decoration: none; }
+
+  /* ——— specimens & diagrams ——— */
+  .spec-row { display: grid; grid-template-columns: 11rem 1fr; gap: var(--s4); align-items: baseline; border-top: 1px solid var(--line); padding: var(--s3) 0; }
+  .spec-row .role { font: .74rem/1.5 var(--sans); color: var(--muted); }
+  .swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(108px, 1fr)); gap: var(--s3); margin: var(--s3) 0 var(--s4); }
+  .swatch { border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--surface); }
+  .swatch .chip { height: 44px; border-bottom: 1px solid var(--line); }
+  .swatch .meta { padding: var(--s1) var(--s2); font: .7rem/1.5 var(--sans); color: var(--muted); }
+  .swatch .meta b { display: block; color: var(--ink); font-weight: 600; }
+  .panel { border: 1px solid var(--line); border-radius: 6px; padding: var(--s4); }
+  .cols2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s4); }
+  @media (max-width: 760px) { .cols2 { grid-template-columns: 1fr; } .toc { columns: 1; } }
+  .scale { display: grid; gap: var(--s2); margin: var(--s4) 0; }
+  .scale-row { display: grid; grid-template-columns: 4.5rem 5.5rem 1fr; align-items: center; gap: var(--s3); font: .78rem/1.4 var(--mono); color: var(--muted); }
+  .scale-row i { display: block; height: 12px; background: var(--pen); border-radius: 2px; }
+  .anatomy { border: 1px solid var(--line); border-radius: 6px; background: var(--surface); padding: var(--s3); margin: var(--s4) 0; }
+  .anatomy .top { height: 4px; background: var(--pen); border-radius: 2px; margin-bottom: var(--s2); }
+  .anatomy .cols { display: grid; grid-template-columns: 1fr 4.2fr 1.5fr 1fr; gap: var(--s2); height: 150px; }
+  .anatomy .cols > div {
+    border: 1px dashed color-mix(in srgb, var(--muted) 55%, transparent); border-radius: 4px;
+    display: flex; align-items: center; justify-content: center; text-align: center;
+    font: .68rem/1.4 var(--mono); color: var(--muted); padding: var(--s1);
+  }
+  .anatomy .cols .main-col { border-style: solid; border-color: var(--muted); color: var(--ink); }
+  .anatomy .cols .marg-col { border-style: solid; border-color: var(--pen); color: var(--pen); }
+  .anatomy .foot { border-top: 1px solid var(--line); margin-top: var(--s2); padding-top: var(--s1); font: italic .7rem/1.4 var(--serif); color: var(--muted); text-align: center; }
+
+  .icon { width: 1.25em; height: 1.25em; vertical-align: -.22em; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+  .icon-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: var(--s3); margin: var(--s4) 0; }
+  .icon-cell { border: 1px solid var(--line); border-radius: 6px; background: var(--surface); padding: var(--s3) var(--s2); text-align: center; }
+  .icon-cell svg { width: 26px; height: 26px; display: block; margin: 0 auto var(--s1); }
+  .icon-cell span { font: .68rem/1.4 var(--sans); color: var(--muted); }
+
+  .flow { display: flex; flex-wrap: wrap; align-items: stretch; gap: var(--s2); margin: var(--s4) 0; }
+  .flow .step { flex: 1 1 9rem; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); padding: var(--s2) var(--s3); }
+  .flow .step .n { font: 600 .68rem/1.6 var(--sans); color: var(--pen); }
+  .flow .step .t { font: 600 .92rem/1.4 var(--serif); }
+  .flow .step .d { font: .76rem/1.5 var(--sans); color: var(--muted); }
+  .flow .sep { align-self: center; color: var(--muted); font: 1rem/1 var(--sans); }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .ribbon { transition: width .25s ease; }
+    .progress > i { transition: width .25s ease; }
+  }
+</style>
+</head>
+<body>
+
+<svg style="display:none" aria-hidden="true">
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5c2.5-1.3 5.5-1.3 8 .5 2.5-1.8 5.5-1.8 8-.5v13.5c-2.5-1.3-5.5-1.3-8 .5-2.5-1.8-5.5-1.8-8-.5z"/><path d="M12 5.5V19"/></symbol>
+  <symbol id="i-pen" viewBox="0 0 24 24"><path d="M4 20l1-4L16.5 4.5a2.1 2.1 0 0 1 3 3L8 19l-4 1z"/><path d="M14.5 6.5l3 3"/></symbol>
+  <symbol id="i-bookmark" viewBox="0 0 24 24"><path d="M7 4h10v16l-5-3.5L7 20z"/></symbol>
+  <symbol id="i-question" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M9.8 9.5a2.3 2.3 0 1 1 3.2 2.1c-.75.33-1 .9-1 1.6"/><path d="M12 16.4h.01"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></symbol>
+  <symbol id="i-flag" viewBox="0 0 24 24"><path d="M6 21V4"/><path d="M6 5c4-2 8 2 12 0v9c-4 2-8-2-12 0"/></symbol>
+  <symbol id="i-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M15 9l-1.8 4.8L8.5 15.5l1.8-4.8z"/></symbol>
+  <symbol id="i-note" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4"/><path d="M9.5 12h6M9.5 15.5h4"/></symbol>
+</svg>
+
+<div class="ribbon" aria-hidden="true"></div>
+
+<!-- 1 · Title -->
+<section class="slide" aria-label="Title">
+  <div>
+    <p class="kicker">Design direction A · Reading Room redesign · 2026-07-23</p>
+    <h1>Marginalia</h1>
+    <p class="lede">Understanding lives in the margin.<sup class="ref">1</sup></p>
+    <p>A design system for documents that teach: the material sits in a serif text column, and everything that helps you understand it — definitions, asides, why-it-matters — sits <span class="hl">permanently visible in the margin beside it</span>. Nothing hides behind a hover.</p>
+    <ol class="toc">
+      <li><a href="#2" data-goto="2">Philosophy</a></li>
+      <li><a href="#3" data-goto="3">Typography</a></li>
+      <li><a href="#4" data-goto="4">Color &amp; tokens</a></li>
+      <li><a href="#5" data-goto="5">Spacing &amp; layout</a></li>
+      <li><a href="#6" data-goto="6">Iconography</a></li>
+      <li><a href="#7" data-goto="7">Components</a></li>
+      <li><a href="#8" data-goto="8">Knowledge apparatus</a></li>
+      <li><a href="#9" data-goto="9">Specimen: a real lesson</a></li>
+      <li><a href="#10" data-goto="10">The signature, isolated</a></li>
+      <li><a href="#11" data-goto="11">Adopting this direction</a></li>
+    </ol>
+  </div>
+  <aside class="margin">
+    <div class="note"><span class="note-num">1</span><b>This is a sidenote.</b> In this direction they replace hover tooltips everywhere. You are already using the system this deck proposes.</div>
+    <div class="note">Navigate with ← → or the buttons below. Each slide holds one concept.</div>
+  </aside>
+</section>
+
+<!-- 2 · Philosophy -->
+<section class="slide" aria-label="Philosophy">
+  <div>
+    <p class="kicker">Philosophy</p>
+    <h2>Three commitments</h2>
+    <h3><svg class="icon"><use href="#i-note"/></svg> The margin is the teacher</h3>
+    <p>A hover tooltip makes the reader choose between reading and understanding — you stop, aim, hover, read, lose your place. A visible sidenote costs one eye movement.<sup class="ref">1</sup> Definitions, caveats, and context sit beside the sentence that needs them, so <span class="hl">prose and explanation are absorbed together</span>.</p>
+    <h3><svg class="icon"><use href="#i-book"/></svg> Ink before decoration</h3>
+    <p>One serif for the material, one small sans for the apparatus, one pen-blue ink for the annotator's voice. Surfaces are hairlines on paper, never shadows. If an element doesn't help you learn, it isn't drawn.</p>
+    <h3><svg class="icon"><use href="#i-pen"/></svg> Mark what matters</h3>
+    <p>Emphasis works like a real highlighter: rare, yellow, and impossible to miss. One marked phrase per screen is a signal; five is noise. Bold is reserved for names and labels, not importance.</p>
+  </div>
+  <aside class="margin">
+    <div class="note"><span class="note-num">1</span><b>Dual coding, by layout.</b> Presenting an idea and its supporting context in adjacent, visually distinct channels lowers working-memory load — the reader never holds a definition in their head while parsing a sentence.</div>
+  </aside>
+</section>
+
+<!-- 3 · Typography -->
+<section class="slide" aria-label="Typography">
+  <div class="span">
+    <p class="kicker">Typography</p>
+    <h2>Two voices, one page</h2>
+    <div class="spec-row"><div class="role">Display · Iowan Old Style 600 · 33.6px</div><div style="font: 600 2.1rem/1.25 var(--serif); letter-spacing: -.01em;">The build fails loudly</div></div>
+    <div class="spec-row"><div class="role">Heading · Iowan Old Style 600 · 24px</div><div style="font: 600 1.5rem/1.3 var(--serif);">Expanding components</div></div>
+    <div class="spec-row"><div class="role">Body · Iowan Old Style 400 · 18/1.7</div><div>The material voice. Iowan Old Style is the face Apple Books sets novels in — built for long text at reading sizes, with oldstyle figures like 1848 that sit inside a line instead of shouting over it.</div></div>
+    <div class="spec-row"><div class="role">Lede · italic · 20.7px</div><div class="lede" style="margin:0">An opening line that frames the section.</div></div>
+    <div class="spec-row"><div class="role">Apparatus · system sans · 13.4/1.55</div><div style="font:.84rem/1.55 var(--sans); color: var(--muted); max-width: 44ch;">The annotator's voice: sidenotes, captions, labels, badges, the HUD. Always small, always sans — you can tell material from apparatus at a glance.</div></div>
+    <div class="spec-row"><div class="role">Label · sans 600 caps · 11.2px</div><div><span class="kicker" style="margin:0">Section four · Color &amp; tokens</span></div></div>
+    <div class="spec-row"><div class="role">Code · SF Mono · 13.1/1.65</div><div><code>node build.mjs doc.rr.html</code></div></div>
+  </div>
+  <aside class="margin">
+    <div class="note"><b>Why Iowan Old Style?</b> It ships with macOS, costs zero bytes, and was drawn for text — sturdy serifs, a tall x-height, no display-face fussiness. Fallbacks: Palatino, Charter, Georgia.</div>
+    <div class="note"><b>The rule of voices:</b> serif = what you are learning. Sans = the system helping you learn it. Never mixed within one element.</div>
+  </aside>
+</section>
+
+<!-- 4 · Color -->
+<section class="slide" aria-label="Color and tokens">
+  <div class="span">
+    <p class="kicker">Color &amp; tokens</p>
+    <h2>Paper, ink, pen, marker</h2>
+    <div class="cols2">
+      <div class="panel" style="background:#faf9f5; border-color:#e6e2d8;">
+        <p class="caption" style="color:#8a857a; margin:0 0 .5rem;">Daylight — warm paper, iron-gall ink</p>
+        <div class="swatches" style="margin:0;">
+          <div class="swatch" style="background:#f2efe7; border-color:#e6e2d8;"><div class="chip" style="background:#faf9f5; border-color:#e6e2d8;"></div><div class="meta" style="color:#8a857a;"><b style="color:#26241f;">paper</b>#faf9f5</div></div>
+          <div class="swatch" style="background:#f2efe7; border-color:#e6e2d8;"><div class="chip" style="background:#26241f;"></div><div class="meta" style="color:#8a857a;"><b style="color:#26241f;">ink</b>#26241f</div></div>
+          <div class="swatch" style="background:#f2efe7; border-color:#e6e2d8;"><div class="chip" style="background:#3a5f8a;"></div><div class="meta" style="color:#8a857a;"><b style="color:#26241f;">pen</b>#3a5f8a</div></div>
+          <div class="swatch" style="background:#f2efe7; border-color:#e6e2d8;"><div class="chip" style="background:linear-gradient(transparent 30%, rgba(245,217,10,.45) 30%, rgba(245,217,10,.45) 85%, transparent 85%), #faf9f5;"></div><div class="meta" style="color:#8a857a;"><b style="color:#26241f;">marker</b>#f5d90a·38%</div></div>
+          <div class="swatch" style="background:#f2efe7; border-color:#e6e2d8;"><div class="chip" style="background:#f2efe7;"></div><div class="meta" style="color:#8a857a;"><b style="color:#26241f;">surface</b>#f2efe7</div></div>
+          <div class="swatch" style="background:#f2efe7; border-color:#e6e2d8;"><div class="chip" style="background:#e6e2d8;"></div><div class="meta" style="color:#8a857a;"><b style="color:#26241f;">hairline</b>#e6e2d8</div></div>
+        </div>
+      </div>
+      <div class="panel" style="background:#201e1a; border-color:#38342c;">
+        <p class="caption" style="color:#97917f; margin:0 0 .5rem;">Lamplit desk — brown-charcoal, never black</p>
+        <div class="swatches" style="margin:0;">
+          <div class="swatch" style="background:#2a2721; border-color:#38342c;"><div class="chip" style="background:#201e1a; border-color:#38342c;"></div><div class="meta" style="color:#97917f;"><b style="color:#e8e4da;">paper</b>#201e1a</div></div>
+          <div class="swatch" style="background:#2a2721; border-color:#38342c;"><div class="chip" style="background:#e8e4da;"></div><div class="meta" style="color:#97917f;"><b style="color:#e8e4da;">ink</b>#e8e4da</div></div>
+          <div class="swatch" style="background:#2a2721; border-color:#38342c;"><div class="chip" style="background:#7fa5cf;"></div><div class="meta" style="color:#97917f;"><b style="color:#e8e4da;">pen</b>#7fa5cf</div></div>
+          <div class="swatch" style="background:#2a2721; border-color:#38342c;"><div class="chip" style="background:linear-gradient(transparent 30%, rgba(217,169,26,.3) 30%, rgba(217,169,26,.3) 85%, transparent 85%), #201e1a;"></div><div class="meta" style="color:#97917f;"><b style="color:#e8e4da;">marker</b>#d9a91a·26%</div></div>
+          <div class="swatch" style="background:#2a2721; border-color:#38342c;"><div class="chip" style="background:#2a2721;"></div><div class="meta" style="color:#97917f;"><b style="color:#e8e4da;">surface</b>#2a2721</div></div>
+          <div class="swatch" style="background:#2a2721; border-color:#38342c;"><div class="chip" style="background:#38342c;"></div><div class="meta" style="color:#97917f;"><b style="color:#e8e4da;">hairline</b>#38342c</div></div>
+        </div>
+      </div>
+    </div>
+    <p style="margin-top: var(--s4);">Semantic inks stay muted, like pigments mixed into the ink rather than stickers on the page: <span class="badge amber">amber · open question</span> <span class="badge green">green · done</span> <span class="badge red">red · hard failure</span></p>
+  </div>
+  <aside class="margin">
+    <div class="note"><b>One accent, still.</b> Pen blue is the only voice color. The marker is not an accent — it is an emphasis device, never used on UI chrome.</div>
+    <div class="note">Both themes ship in every file via <code style="font-size:.9em">prefers-color-scheme</code>; every color is a custom property.</div>
+  </aside>
+</section>
+
+<!-- 5 · Spacing & layout -->
+<section class="slide" aria-label="Spacing and layout">
+  <div>
+    <p class="kicker">Spacing &amp; layout</p>
+    <h2>A 4px rhythm, an asymmetric page</h2>
+    <div class="scale">
+      <div class="scale-row"><span>--s1</span><span>4px</span><i style="width:4px"></i></div>
+      <div class="scale-row"><span>--s2</span><span>8px</span><i style="width:8px"></i></div>
+      <div class="scale-row"><span>--s3</span><span>12px</span><i style="width:12px"></i></div>
+      <div class="scale-row"><span>--s4</span><span>16px</span><i style="width:16px"></i></div>
+      <div class="scale-row"><span>--s5</span><span>24px</span><i style="width:24px"></i></div>
+      <div class="scale-row"><span>--s6</span><span>32px</span><i style="width:32px"></i></div>
+      <div class="scale-row"><span>--s7</span><span>48px</span><i style="width:48px"></i></div>
+      <div class="scale-row"><span>--s8</span><span>64px</span><i style="width:64px"></i></div>
+    </div>
+    <div class="anatomy" role="img" aria-label="Slide anatomy: progress ribbon on top, then four columns — flexible gutter, main text column up to 58 characters, 17rem margin rail, flexible gutter — and a footer strip.">
+      <div class="top"></div>
+      <div class="cols">
+        <div>1fr</div>
+        <div class="main-col">main · ≤58ch<br>the material</div>
+        <div class="marg-col">margin · 17rem<br>the apparatus</div>
+        <div>1fr</div>
+      </div>
+      <div class="foot">running title · page n / m</div>
+    </div>
+  </div>
+  <aside class="margin">
+    <div class="note"><b>Why 58ch?</b> 55–65 characters per line is the comfortable reading range for 18px serif text; the rail keeps the page asymmetric like a real annotated book.</div>
+    <div class="note">Radius is 6px everywhere; surfaces are defined by hairline borders, never shadows. Shadows would lift elements off paper — nothing floats in a book.</div>
+  </aside>
+</section>
+
+<!-- 6 · Iconography -->
+<section class="slide" aria-label="Iconography">
+  <div>
+    <p class="kicker">Iconography</p>
+    <h2>Drawn with the same pen</h2>
+    <p>Icons are line drawings on a 24-unit grid: <span class="hl">1.5px stroke, round caps, round joins</span> — the weight of a fine pen, matching the serif's hairlines rather than competing with them. Always <code>currentColor</code>, so they inherit the voice they sit in.</p>
+    <div class="icon-grid">
+      <div class="icon-cell"><svg class="icon"><use href="#i-book"/></svg><span>book</span></div>
+      <div class="icon-cell"><svg class="icon"><use href="#i-pen"/></svg><span>pen</span></div>
+      <div class="icon-cell"><svg class="icon"><use href="#i-bookmark"/></svg><span>bookmark</span></div>
+      <div class="icon-cell"><svg class="icon"><use href="#i-question"/></svg><span>question</span></div>
+      <div class="icon-cell"><svg class="icon"><use href="#i-check"/></svg><span>check</span></div>
+      <div class="icon-cell"><svg class="icon"><use href="#i-flag"/></svg><span>flag</span></div>
+      <div class="icon-cell"><svg class="icon"><use href="#i-compass"/></svg><span>compass</span></div>
+      <div class="icon-cell"><svg class="icon"><use href="#i-note"/></svg><span>note</span></div>
+    </div>
+    <p class="caption"><svg class="icon" style="color:var(--green)"><use href="#i-check"/></svg> Do: single-weight outlines, one concept per glyph. &nbsp; <svg class="icon" style="color:var(--red)"><use href="#i-flag"/></svg> Don't: filled shapes, two-tone icons, decorative flourishes — they read as pictures, not punctuation.</p>
+  </div>
+  <aside class="margin">
+    <div class="note"><b>Inline sprite, tree-shaken.</b> Same mechanism as today's kit: one hidden <code style="font-size:.9em">&lt;symbol&gt;</code> block, only the icons a document actually uses are emitted.</div>
+  </aside>
+</section>
+
+<!-- 7 · Components -->
+<section class="slide" aria-label="Components">
+  <div>
+    <p class="kicker">Components</p>
+    <h2>The furniture, requieted</h2>
+    <div class="tiles">
+      <div class="tile"><div class="value">14</div><div class="label">Docs shipped</div></div>
+      <div class="tile"><div class="value">3</div><div class="label">Open risks</div></div>
+      <div class="tile"><div class="value">92%</div><div class="label">Tests green</div></div>
+    </div>
+    <div class="callout"><span class="who">Note —</span> callouts speak in the annotator's voice: an italic serif interjection, a pen-blue rule, plain body text. No icon shouting.</div>
+    <div class="callout amber"><span class="who">Open question —</span> amber marks a decision the reader owns. It should read like a pencilled query in a manuscript, not an alarm.</div>
+    <div class="progress-row"><span class="plabel">Migration</span><div class="progress"><i style="width:60%"></i></div><span class="pcount">3 of 5 phases</span></div>
+    <p>Status stays inline and lowercase-quiet: <span class="badge green">done</span> <span class="badge amber">in review</span> <span class="badge red">failed</span> <span class="badge pen">active</span> — small caps sans, hairline ring, no fills.</p>
+  </div>
+  <aside class="margin">
+    <div class="note"><b>What changed vs. today:</b> serif numerals in tiles, italic lead-ins on callouts, progress bars always carry a written count — the bar illustrates the number, never replaces it.</div>
+  </aside>
+</section>
+
+<!-- 8 · Knowledge apparatus -->
+<section class="slide" aria-label="Knowledge apparatus">
+  <div>
+    <p class="kicker">Knowledge apparatus</p>
+    <h2>Terms, depth, and self-checks</h2>
+    <p>Jargon is marked with a dotted underline and a numbered reference: the build emits each <span class="term">tree-shaken<sup class="ref">1</sup></span> definition into the margin, in reading order. Optional depth folds away in a paper-colored pleat:</p>
+    <details class="fold">
+      <summary>How sidenote numbering works (optional depth)</summary>
+      <p style="font: .9rem/1.6 var(--serif); margin:0;">Numbers restart at ¹ on every slide. The build collects <code>rr-term</code> elements in document order, assigns numbers, and emits matching notes into the slide's margin rail — authors never number by hand.</p>
+    </details>
+    <div class="quiz" data-quiz>
+      <p class="q"><svg class="icon" style="color:var(--pen)"><use href="#i-question"/></svg> Self-check: where does a definition live in this system?</p>
+      <button class="choice" data-correct="0">In a tooltip that appears on hover</button>
+      <button class="choice" data-correct="1">In the margin, permanently visible, numbered to its reference</button>
+      <div class="why"><b>Why:</b> hover hides knowledge behind an interaction and pins it to a cursor. The margin keeps the definition in peripheral vision, so the sentence and its explanation are read as one unit — that adjacency is the entire point of this direction.</div>
+    </div>
+  </div>
+  <aside class="margin">
+    <div class="note"><span class="note-num">1</span><b>tree-shaken</b> — only the pieces actually referenced are kept; unused icons and styles are dropped from the emitted file.</div>
+    <div class="note"><b>Self-checks keep their kit behavior</b> — answers reveal instantly and results can be copied back to an agent. Only the clothing changes.</div>
+  </aside>
+</section>
+
+<!-- 9 · Specimen -->
+<section class="slide" aria-label="Specimen lesson">
+  <div>
+    <p class="kicker">Specimen · a real lesson, set in Marginalia</p>
+    <h2>What happens when you run <code>node build.mjs doc.rr.html</code></h2>
+    <p>The build is a compiler for documents. It reads your <span class="term">.rr.html<sup class="ref">1</sup></span> source, expands every <code>&lt;rr-*&gt;</code> tag against its component template, and refuses to guess: <span class="hl">an unknown component, prop, or icon name stops the build with an error</span> — that loudness is the contract that keeps every document on-system.</p>
+    <div class="flow">
+      <div class="step"><div class="n">1 · Expand</div><div class="t">Templates fill in</div><div class="d">Each rr-* tag becomes real HTML with the canonical CSS</div></div>
+      <div class="sep">→</div>
+      <div class="step"><div class="n">2 · Validate</div><div class="t">Fail loudly</div><div class="d">Unknown names are build errors, never silent passthrough</div></div>
+      <div class="sep">→</div>
+      <div class="step"><div class="n">3 · Shake</div><div class="t">Prune the sprite</div><div class="d">Only icons you used are embedded</div></div>
+      <div class="sep">→</div>
+      <div class="step"><div class="n">4 · Emit</div><div class="t">One file</div><div class="d">Self-contained HTML, both themes, opens from disk</div></div>
+    </div>
+    <p>The output has <span class="term">zero dependencies<sup class="ref">2</sup></span>: no CDN, no fonts to fetch, no build products to keep alongside. The source stays next to it so the document can be edited and rebuilt.</p>
+  </div>
+  <aside class="margin">
+    <div class="note"><span class="note-num">1</span><b>.rr.html</b> — the small authoring file of rr-* tags you write; the build turns it into the polished page.</div>
+    <div class="note"><span class="note-num">2</span><b>zero dependencies</b> — everything is inlined: styles, icons, scripts. The one historical exception, Mermaid's CDN script, is loaded only when a page has diagrams.</div>
+    <div class="note">Notice the shape of this slide: prose carries the idea, the flow strip illustrates it, the margin defines its words. No element repeats another's job.</div>
+  </aside>
+</section>
+
+<!-- 10 · Signature isolated -->
+<section class="slide" aria-label="Signature demonstration">
+  <div>
+    <p class="kicker">The signature, isolated</p>
+    <h2>One paragraph, fully annotated</h2>
+    <p style="font-size: 1.08rem;">When a debrief says the retry queue was <span class="term">idempotent<sup class="ref">1</sup></span> but the dispatcher <span class="term">double-fired<sup class="ref">2</sup></span> under load, the sentence you must not skim is this one: <span class="hl">the bug was in the assumption, not the code</span> — the queue honored its contract while the caller held a different <span class="term">contract<sup class="ref">3</sup></span> in mind.</p>
+    <p class="caption" style="margin-top: var(--s4);">House rules: at most three sidenotes per slide, at most one highlighted phrase per screen. Scarcity is what keeps both legible as signals.</p>
+  </div>
+  <aside class="margin">
+    <div class="note"><span class="note-num">1</span><b>idempotent</b> — safe to run twice; the second run changes nothing.</div>
+    <div class="note"><span class="note-num">2</span><b>double-fired</b> — dispatched the same job to two workers at once.</div>
+    <div class="note"><span class="note-num">3</span><b>contract</b> — the behavior each side believes the other guarantees. Most incidents live in the gap between two of these.</div>
+  </aside>
+</section>
+
+<!-- 11 · Adoption -->
+<section class="slide" aria-label="Adoption">
+  <div>
+    <p class="kicker">Adopting this direction</p>
+    <h2>The tokens, and what changes</h2>
+<pre><code>:root {
+  --paper: #faf9f5;  --ink: #26241f;   --muted: #8a857a;
+  --line: #e6e2d8;   --surface: #f2efe7;
+  --pen: #3a5f8a;    --marker: #f5d90a;
+  --hl: color-mix(in srgb, var(--marker) 38%, transparent);
+  --amber: #b0730f;  --green: #43705c; --red: #b5473f;
+  --serif: "Iowan Old Style", Palatino, Charter, Georgia, serif;
+  --sans: ui-sans-serif, -apple-system, "Segoe UI", sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, monospace;
+  --s1:.25rem; --s2:.5rem; --s3:.75rem; --s4:1rem;
+  --s5:1.5rem; --s6:2rem;  --s7:3rem;   --s8:4rem;  /* 4px base */
+}
+/* dark: paper #201e1a · ink #e8e4da · pen #7fa5cf · marker 26% */</code></pre>
+    <p>Three changes ripple through the kit:</p>
+    <p><svg class="icon" style="color:var(--pen)"><use href="#i-note"/></svg> <b>rr-term</b> stops rendering tooltips and emits numbered margin notes; the doc shell gains the 17rem rail.<br>
+    <svg class="icon" style="color:var(--pen)"><use href="#i-book"/></svg> <b>Body type</b> moves to Iowan Old Style 18/1.7; sans becomes the apparatus-only voice.<br>
+    <svg class="icon" style="color:var(--pen)"><use href="#i-pen"/></svg> <b>Emphasis</b> becomes the highlighter wash; accent consolidates on pen blue.</p>
+  </div>
+  <aside class="margin">
+    <div class="note"><b>Cost of adoption:</b> medium. Layout grid and rr-term change shape; all other components are re-skins of what exists.</div>
+  </aside>
+</section>
+
+<footer class="hud">
+  <button data-nav="-1" aria-label="Previous slide">← prev</button>
+  <button data-nav="1" aria-label="Next slide">next →</button>
+  <span class="running">Marginalia — understanding lives in the margin</span>
+  <span class="counter" aria-live="polite"></span>
+</footer>
+
+<script>
+  const slides = [...document.querySelectorAll(".slide")];
+  const ribbon = document.querySelector(".ribbon");
+  const counter = document.querySelector(".hud .counter");
+  let i = -1;
+  function show(n) {
+    const next = Math.max(0, Math.min(slides.length - 1, n));
+    if (next === i) return;
+    i = next;
+    slides.forEach((s, j) => s.classList.toggle("active", j === i));
+    ribbon.style.width = ((i + 1) / slides.length) * 100 + "%";
+    counter.textContent = (i + 1) + " / " + slides.length;
+    history.replaceState(null, "", "#" + (i + 1));
+  }
+  addEventListener("keydown", (e) => {
+    if (/^(INPUT|TEXTAREA|SELECT|BUTTON)$/.test(e.target.tagName)) return;
+    if (["ArrowRight", "ArrowDown", " ", "PageDown"].includes(e.key)) { e.preventDefault(); show(i + 1); }
+    else if (["ArrowLeft", "ArrowUp", "PageUp"].includes(e.key)) { e.preventDefault(); show(i - 1); }
+    else if (e.key === "Home") show(0);
+    else if (e.key === "End") show(slides.length - 1);
+  });
+  document.querySelectorAll("[data-nav]").forEach((b) => b.addEventListener("click", () => show(i + +b.dataset.nav)));
+  document.querySelectorAll("[data-goto]").forEach((a) => a.addEventListener("click", (e) => { e.preventDefault(); show(+a.dataset.goto - 1); }));
+  addEventListener("hashchange", () => show((parseInt(location.hash.slice(1), 10) || 1) - 1));
+  show((parseInt(location.hash.slice(1), 10) || 1) - 1);
+
+  document.querySelectorAll("[data-quiz]").forEach((q) => {
+    q.querySelectorAll(".choice").forEach((c) => c.addEventListener("click", () => {
+      if (q.classList.contains("answered")) return;
+      q.classList.add("answered");
+      q.querySelectorAll(".choice").forEach((x) => {
+        if (x.dataset.correct === "1") x.classList.add("is-right");
+        else if (x === c) x.classList.add("is-wrong");
+      });
+    }));
+  });
+</script>
+</body>
+</html>

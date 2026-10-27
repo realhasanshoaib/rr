@@ -1,0 +1,895 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Traverse — Reading Room merged direction</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    /* surfaces */
+    --bg: #f4f5f3;      /* chart paper */
+    --surface: #eceeea; /* raised panel */
+    --line: #dde1dd;    /* hairline — a rule is a boundary, never decoration */
+    /* ink */
+    --fg: #232a2e;      /* slate ink */
+    --muted: #7d8a90;   /* secondary ink */
+    /* position + semantics */
+    --accent: #2456d6;  /* survey blue — position, action, links */
+    --amber: #a8730d;
+    --green: #3f7a5a;
+    --red: #c04a42;
+    /* rhythm — 8px instrument */
+    --s1: 8px; --s2: 16px; --s3: 24px; --s4: 32px;
+    --s5: 48px; --s6: 64px; --s7: 96px; --s8: 128px;
+    /* voices */
+    --text: "Avenir Next", Avenir, Seravek, ui-sans-serif, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --radius: 4px;
+    --spine-w: 132px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1b2023; --surface: #232a2e; --line: #313a3f;
+      --fg: #dde3e6; --muted: #8b979d;
+      --accent: #6b9aff; --amber: #c99245; --green: #5f9e7d; --red: #d3675f;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font: 400 18px/1.65 var(--text); -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, p, ul, ol { margin: 0; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code { font: 500 16px/1.5 var(--mono); background: var(--surface); border: 1px solid var(--line); border-radius: 2px; padding: .05rem .3rem; }
+  button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ---------- spine (signature) ---------- */
+  .spine {
+    position: fixed; inset: 0 auto 0 0; width: var(--spine-w); z-index: 30;
+    background: var(--bg); border-right: 1px solid var(--line);
+    display: flex; flex-direction: column;
+  }
+  .spine-mark { padding: var(--s2) 0 var(--s1) var(--s2); font: 600 13px/1.2 var(--mono); letter-spacing: .1em; color: var(--muted); }
+  .spine-rail { flex: 1; position: relative; display: flex; flex-direction: column; justify-content: space-evenly; padding: var(--s1) 0; }
+  .spine-rail::before { content: ""; position: absolute; left: var(--s2); top: var(--s1); bottom: var(--s1); width: 1px; background: var(--line); }
+  .spine-tick { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 7px; padding: 5px 4px 5px var(--s2); color: var(--muted); text-align: left; }
+  .spine-tick::before { content: ""; flex: none; width: 9px; height: 2px; background: currentColor; }
+  .spine-lab { font: 500 13px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; }
+  .spine-tick:hover { color: var(--fg); }
+  .spine-tick[aria-current="true"] { color: var(--accent); }
+  .spine-tick[aria-current="true"]::before { width: 15px; }
+  .spine-tick[aria-current="true"]::after {
+    content: ""; position: absolute; left: 13px; top: 8px;
+    width: 7px; height: 7px; border-radius: 50%; background: var(--accent);
+  }
+  /* sub-ticks: the active tick subdivides, one dash per step */
+  .spine-sub { display: none; flex-basis: 100%; margin: 3px 0 0 var(--s3); gap: 5px; align-items: center; }
+  .spine-tick[aria-current="true"] .spine-sub { display: flex; }
+  .spine-sub i { width: 7px; height: 2px; background: var(--line); }
+  .spine-sub i.on { background: var(--accent); }
+  .spine-sub i.now { width: 11px; }
+  .spine-pos { padding: var(--s1) 0 var(--s2) var(--s2); font: 500 13px/1.4 var(--mono); letter-spacing: .04em; color: var(--muted); }
+  .corner { position: fixed; top: 14px; right: var(--s2); z-index: 20; font: 600 13px/1 var(--mono); letter-spacing: .08em; color: var(--muted); }
+
+  /* ---------- hud ---------- */
+  .hud {
+    position: fixed; inset: auto 0 0 var(--spine-w); z-index: 20;
+    display: flex; align-items: center; gap: var(--s2); padding: 7px var(--s2);
+    border-top: 1px solid var(--line);
+    background: color-mix(in srgb, var(--bg) 90%, transparent); backdrop-filter: blur(8px);
+  }
+  .hud-btn { font: 500 13px/1 var(--mono); color: var(--muted); border: 1px solid var(--line); border-radius: var(--radius); padding: 5px 12px; background: var(--bg); }
+  .hud-btn:hover { color: var(--fg); border-color: var(--muted); }
+  .hud-bar { display: none; flex: 1; height: 2px; background: var(--line); }
+  .hud-bar > i { display: block; height: 100%; background: var(--accent); }
+  .hud-count { margin-left: auto; font: 500 13px/1 var(--mono); letter-spacing: .06em; color: var(--muted); }
+  .hud-hint { font: 400 13px/1 var(--mono); color: var(--muted); }
+
+  /* ---------- slides ---------- */
+  .slide {
+    display: none; min-height: 100dvh;
+    padding: var(--s6) var(--s4) var(--s7) calc(var(--spine-w) + var(--s4));
+    grid-template-columns: 1fr min(880px, 100%) 1fr; align-content: center; row-gap: 4px;
+    position: relative;
+  }
+  .slide.active { display: grid; overflow-y: auto; }
+  .slide > * { grid-column: 2; min-width: 0; }
+  .slide h1 { font: 600 44px/1.15 var(--text); letter-spacing: -.015em; }
+  .slide h2 { font: 600 30px/1.2 var(--text); letter-spacing: -.012em; margin-bottom: var(--s2); }
+  .lede { font-size: 20px; line-height: 1.6; max-width: 62ch; }
+  .note { color: var(--muted); font-size: 16px; }
+  /* the head line: title first and largest, kind-label rides the same line */
+  .head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: var(--s1) var(--s2); }
+  .head .klabel { margin-left: auto; }
+  .klabel { font: 600 16px/1.4 var(--mono); letter-spacing: .05em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+  .card-t { font: 600 19px/1.35 var(--text); margin: 0; }
+  .co-t { font: 600 18px/1.4 var(--text); }
+  .m-top-2 { margin-top: var(--s2); } .m-top-3 { margin-top: var(--s3); } .m-top-4 { margin-top: var(--s4); }
+
+  @media (max-width: 900px) {
+    .spine { display: none; }
+    .hud { left: 0; }
+    .hud-bar { display: block; }
+    .hud-hint { display: none; }
+    .slide { padding-left: var(--s3); padding-right: var(--s3); }
+    .slide h1 { font-size: 34px; }
+  }
+
+  /* ---------- icons ---------- */
+  .icon { width: 1.15em; height: 1.15em; vertical-align: -.2em; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: square; stroke-linejoin: miter; }
+
+  /* ---------- the beam: steps with ghost waypoints ---------- */
+  .step-wp { display: block; font: 600 16px/1.4 var(--mono); letter-spacing: .05em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+  .step-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: var(--s1) var(--s2); }
+  .step-head .step-wp { margin-left: auto; }
+  .step .step-body { visibility: hidden; }
+  .step.is-shown .step-body { visibility: visible; }
+  .step.is-shown .step-wp { color: var(--accent); }
+  .step.is-done .step-wp { color: var(--muted); }
+  .step.is-done .step-body, .step.is-done .step-body * { color: var(--muted); }
+  .prin-card.step:not(.is-shown) { border-style: dashed; background: transparent; }
+  .hint { color: var(--muted); font-size: 16px; margin-bottom: var(--s2); }
+  .hint b { color: var(--accent); font-weight: 600; }
+
+  /* ---------- title slide ---------- */
+  .contours { position: absolute; right: -4%; bottom: -8%; width: min(52%, 560px); pointer-events: none; }
+  .contours path { fill: none; stroke: var(--line); stroke-width: 1.5; }
+  .contours .you { fill: var(--accent); stroke: none; }
+  .contours text { font: 600 13px var(--mono); letter-spacing: .1em; fill: var(--accent); }
+  .above { position: relative; z-index: 1; }
+  .legend-toc { list-style: none; padding: 0; margin-top: var(--s4); display: grid; grid-template-columns: 1fr 1fr; gap: 6px var(--s5); max-width: 760px; }
+  .legend-toc a { display: flex; align-items: baseline; gap: 12px; color: var(--fg); padding: 4px 0; border-bottom: 1px solid var(--line); }
+  .legend-toc a:hover { color: var(--accent); text-decoration: none; }
+  .legend-toc .no { font: 600 16px/1 var(--mono); letter-spacing: .04em; color: var(--muted); min-width: 2em; }
+  .legend-toc a:hover .no { color: var(--accent); }
+  .parentage { font: 500 16px/1.4 var(--mono); letter-spacing: .05em; text-transform: uppercase; color: var(--muted); margin-top: var(--s4); }
+  .parentage b { color: var(--accent); font-weight: 600; }
+
+  /* ---------- principle cards ---------- */
+  .prin { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s2); }
+  @media (max-width: 900px) { .prin { grid-template-columns: 1fr; } }
+  .prin-card { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); padding: var(--s3); }
+  .prin-card .icon { width: 22px; height: 22px; color: var(--accent); }
+  .prin-card h3 { font: 600 19px/1.35 var(--text); margin: 0; }
+  .prin-card p { font-size: 16px; line-height: 1.6; color: var(--fg); margin-top: var(--s1); }
+
+  /* ---------- type slide ---------- */
+  .spec { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+  .spec-row { display: grid; grid-template-columns: 230px 1fr; gap: var(--s3); align-items: baseline; padding: 12px var(--s3); border-bottom: 1px solid var(--line); }
+  .spec-row:last-child { border-bottom: 0; }
+  .spec-meta { font: 500 16px/1.5 var(--mono); letter-spacing: .02em; color: var(--muted); text-transform: uppercase; }
+  .sp-display { font: 600 32px/1.15 var(--text); letter-spacing: -.015em; }
+  .sp-section { font: 600 24px/1.25 var(--text); letter-spacing: -.01em; }
+  .sp-body { font: 400 18px/1.65 var(--text); }
+  .sp-support { font: 400 16px/1.6 var(--text); color: var(--muted); }
+  .sp-inst { font: 500 16px/1.6 var(--mono); }
+  .sp-label { font: 500 13px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  @media (max-width: 900px) { .spec-row { grid-template-columns: 1fr; gap: 4px; } }
+
+  /* ---------- color slide ---------- */
+  .strip { display: grid; grid-template-columns: repeat(9, 1fr); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+  .sw { padding: 10px 8px 8px; min-height: 88px; display: flex; flex-direction: column; justify-content: flex-end; gap: 2px; }
+  .sw b { font: 600 16px/1.3 var(--mono); letter-spacing: .02em; text-transform: lowercase; }
+  .sw span { font: 400 16px/1.3 var(--mono); opacity: .8; }
+  .strip-cap { font: 500 16px/1.4 var(--mono); letter-spacing: .05em; text-transform: uppercase; color: var(--muted); margin: var(--s3) 0 var(--s1); }
+  .sem { list-style: none; padding: 0; margin-top: var(--s3); display: grid; gap: 6px; font-size: 16px; }
+  .sem i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 10px; vertical-align: baseline; }
+  @media (max-width: 900px) { .strip { grid-template-columns: repeat(3, 1fr); } }
+
+  /* ---------- spacing slide ---------- */
+  .cols2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s4); align-items: start; }
+  @media (max-width: 900px) { .cols2 { grid-template-columns: 1fr; } }
+  .srow { display: grid; grid-template-columns: 3.5em 1fr; align-items: center; gap: 12px; padding: 5px 0; }
+  .srow code { border: 0; background: none; padding: 0; color: var(--muted); font-size: 16px; }
+  .srow i { display: block; height: 12px; background: var(--muted); }
+  .srow span { font: 400 16px/1 var(--mono); color: var(--muted); }
+  .anatomy { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); display: grid; grid-template-columns: 34px 1fr 64px; min-height: 300px; overflow: hidden; }
+  .an-spine { border-right: 1px solid var(--line); display: flex; flex-direction: column; justify-content: space-evenly; padding: 8px 0; }
+  .an-spine i { display: block; width: 8px; height: 2px; background: var(--muted); margin-left: 8px; }
+  .an-spine i.on { width: 13px; background: var(--accent); }
+  .an-spine i.sub { width: 5px; margin-left: 14px; background: var(--accent); }
+  .an-spine i.sub-off { width: 5px; margin-left: 14px; background: var(--line); }
+  .an-page { padding: var(--s3); display: flex; flex-direction: column; }
+  .an-head { display: flex; justify-content: space-between; align-items: flex-start; }
+  .an-title { width: 62%; height: 18px; background: var(--fg); opacity: .8; }
+  .an-corner { width: 15%; height: 10px; border: 1px solid var(--muted); border-radius: 2px; opacity: .7; }
+  .an-block { height: 40px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg); }
+  .an-ghost { height: 40px; border: 1px dashed var(--line); border-radius: var(--radius); display: grid; align-content: center; padding-left: 10px; }
+  .an-ghost span { font: 600 13px/1 var(--mono); letter-spacing: .05em; color: var(--muted); }
+  .an-legend { border-left: 1px solid var(--line); padding: 10px 8px; display: flex; flex-direction: column; gap: 6px; }
+  .an-legend span { font: 600 13px/1 var(--mono); letter-spacing: .04em; color: var(--muted); }
+  .an-legend i { display: block; height: 22px; border: 1px solid var(--line); border-radius: 2px; border-left: 2px solid var(--accent); }
+  .an-gap { display: flex; align-items: center; gap: 8px; color: var(--accent); font: 500 13px/1 var(--mono); letter-spacing: .05em; }
+  .an-gap::before { content: ""; width: 1px; align-self: stretch; background: var(--accent); margin-left: 10px; }
+  .an-g2 { height: var(--s2); } .an-g3 { height: var(--s3); }
+
+  /* ---------- icon slide ---------- */
+  .iconrow { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; text-align: center; }
+  .iconrow .icon { width: 26px; height: 26px; }
+  .iconrow figure { margin: 0; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); padding: var(--s2) 4px 10px; }
+  .iconrow figcaption { font: 500 16px/1 var(--mono); letter-spacing: .04em; text-transform: lowercase; color: var(--muted); margin-top: 10px; }
+  .iconrow .new-icon { border-color: var(--accent); }
+  .icon-grid-demo { width: 128px; height: 128px; border: 1px solid var(--line); background:
+      repeating-linear-gradient(to right, var(--line) 0 1px, transparent 1px 16px),
+      repeating-linear-gradient(to bottom, var(--line) 0 1px, transparent 1px 16px);
+    display: grid; place-items: center; flex: none; }
+  .icon-grid-demo .icon { width: 96px; height: 96px; stroke-width: 2; color: var(--fg); }
+  .icon-spec { display: flex; gap: var(--s4); align-items: flex-start; }
+  .dodont { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s2); }
+  .dd { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); padding: var(--s2) var(--s3); display: flex; gap: var(--s2); align-items: center; }
+  .dd .icon { width: 30px; height: 30px; flex: none; }
+  .dd-bad .icon { stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.2; }
+  .dd b { font: 600 16px/1 var(--mono); letter-spacing: .06em; }
+  .dd-ok b { color: var(--green); } .dd-bad b { color: var(--red); }
+  .dd p { font-size: 16px; line-height: 1.5; color: var(--muted); margin-top: 4px; }
+
+  /* ---------- components slide ---------- */
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: var(--s2) var(--s3); }
+  .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s2); }
+  .tile-v { font: 600 26px/1.2 var(--mono); letter-spacing: -.02em; }
+  .tile-u { font-size: 16px; }
+  .tile-c { font-size: 16px; color: var(--muted); margin-top: 4px; }
+  .badge { display: inline-block; font: 600 16px/1.5 var(--mono); letter-spacing: .05em; text-transform: uppercase; border: 1px solid var(--line); border-radius: 2px; padding: 2px 10px; color: var(--muted); }
+  .badge-blue { color: var(--accent); border-color: var(--accent); }
+  .badge-green { color: var(--green); border-color: var(--green); }
+  .badge-amber { color: var(--amber); border-color: var(--amber); }
+  .badge-red { color: var(--red); border-color: var(--red); }
+  .callout { border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: var(--radius); background: var(--surface); padding: var(--s2) var(--s3); font-size: 16px; }
+  .callout-amber { border-left-color: var(--amber); }
+  .callout .head { margin-bottom: var(--s1); }
+  .prog-label { display: flex; justify-content: space-between; font: 500 16px/1.4 var(--mono); letter-spacing: .04em; color: var(--muted); margin-bottom: 6px; }
+  .prog { height: 4px; background: var(--line); }
+  .prog > i { display: block; height: 100%; background: var(--green); }
+  .comp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s2); align-items: start; }
+  @media (max-width: 900px) { .comp-grid { grid-template-columns: 1fr; } }
+
+  /* ---------- lookup + recall slide ---------- */
+  .lookup { display: grid; grid-template-columns: 1fr 300px; gap: var(--s3); align-items: start; }
+  @media (max-width: 900px) { .lookup { grid-template-columns: 1fr; } }
+  .term { border-bottom: 1px dotted var(--muted); cursor: help; }
+  .term-hot { border-bottom-color: var(--accent); color: var(--accent); border-bottom-style: solid; }
+  .legend { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); padding: var(--s2); }
+  .legend h3 { font: 600 16px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-bottom: var(--s2); }
+  .legend-item { padding: 8px 10px; border-radius: 2px; border-left: 2px solid var(--line); margin-bottom: 8px; }
+  .legend-item:last-child { margin-bottom: 0; }
+  .legend-item b { display: block; font: 600 16px/1.4 var(--text); }
+  .legend-item p { font-size: 16px; line-height: 1.5; color: var(--muted); }
+  .legend-lit { border-left-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); }
+  .legend-lit p { color: var(--fg); }
+
+  .recall {
+    display: grid; width: 100%; text-align: left;
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: var(--s2) var(--s3);
+  }
+  .recall:hover { border-color: var(--muted); }
+  .recall.is-flipped { border-color: var(--accent); }
+  .recall-face { grid-area: 1 / 1; }
+  .recall .back { opacity: 0; visibility: hidden; }
+  .recall.is-flipped .front { opacity: 0; visibility: hidden; }
+  .recall.is-flipped .back { opacity: 1; visibility: visible; }
+  .recall-q { display: block; font: 600 18px/1.5 var(--text); }
+  .recall-why { display: block; font-size: 16px; line-height: 1.55; color: var(--muted); margin-top: var(--s1); }
+  .recall-foot { display: flex; align-items: center; gap: 8px; font: 600 16px/1.4 var(--mono); letter-spacing: .05em; text-transform: uppercase; color: var(--muted); margin-top: var(--s2); }
+  .recall.is-flipped .recall-foot { color: var(--accent); }
+
+  /* ---------- specimen route ---------- */
+  .route { list-style: none; padding: 0; position: relative; }
+  .route::before { content: ""; position: absolute; left: 13px; top: 14px; bottom: 14px; width: 2px; background: var(--line); }
+  .route li { position: relative; padding: 0 0 var(--s3) var(--s5); }
+  .route li:last-child { padding-bottom: 0; }
+  .wp-dot { position: absolute; left: 0; top: 0; width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--line); background: var(--bg); display: grid; place-items: center; color: var(--muted); }
+  .wp-dot .icon { width: 14px; height: 14px; }
+  .step.is-shown .wp-dot { border-color: var(--accent); color: var(--accent); }
+  .step.is-shown .wp-dot.wp-red { border-color: var(--red); color: var(--red); }
+  .step.is-shown .wp-dot.wp-green { border-color: var(--green); color: var(--green); }
+  .wp-co { font: 600 16px/1.4 var(--mono); letter-spacing: .05em; color: var(--muted); white-space: nowrap; }
+  .step.is-shown:not(.is-done) .wp-co { color: var(--accent); }
+  .wp-t { font: 600 18px/1.4 var(--text); margin: 0; }
+  .wp-d { font-size: 16px; line-height: 1.55; color: var(--muted); max-width: 62ch; margin-top: 2px; }
+
+  /* ---------- signature slide ---------- */
+  .states4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--s2); }
+  @media (max-width: 900px) { .states4 { grid-template-columns: 1fr 1fr; } }
+  .st { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); padding: var(--s2) var(--s3); }
+  .st-ghost { border-style: dashed; background: transparent; }
+  .st .step-wp { margin-bottom: 6px; }
+  .st-wp-on { color: var(--accent); }
+  .st p { font-size: 16px; line-height: 1.5; color: var(--muted); margin-top: 6px; }
+  .st b { font: 600 16px/1.4 var(--mono); letter-spacing: .05em; color: var(--fg); }
+  .st-line { display: block; height: 10px; border-radius: 2px; background: color-mix(in srgb, var(--line) 55%, transparent); margin-top: 4px; }
+  .st-line-ink { background: var(--fg); opacity: .75; }
+  .st-line-mut { background: var(--muted); opacity: .5; }
+  .st-subdemo { display: flex; flex-direction: column; gap: 5px; padding: 4px 0 2px; }
+  .st-subdemo i { display: block; height: 2px; width: 9px; background: var(--muted); }
+  .st-subdemo i.big { width: 15px; background: var(--accent); }
+  .st-subdemo i.s-on { width: 7px; margin-left: 6px; background: var(--accent); }
+  .st-subdemo i.s-now { width: 11px; margin-left: 6px; background: var(--accent); }
+  .st-subdemo i.s-off { width: 7px; margin-left: 6px; background: var(--line); }
+
+  /* ---------- code / adoption ---------- */
+  pre { margin: 0; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: var(--s2) var(--s3); overflow-x: auto; font: 400 16px/1.5 var(--mono); }
+  pre b { color: var(--accent); font-weight: 600; }
+  pre i { color: var(--muted); font-style: normal; }
+  .adopt-list { list-style: none; padding: 0; display: grid; gap: 10px; }
+  .adopt-list li { display: flex; gap: 12px; font-size: 16px; line-height: 1.55; }
+  .adopt-list .no { font: 600 16px/1.55 var(--mono); color: var(--accent); flex: none; }
+
+  /* motion: color/contrast feedback only, and only when allowed */
+  @media (prefers-reduced-motion: no-preference) {
+    .spine-tick::before { transition: width .12s ease; }
+    .spine-sub i { transition: background .12s ease, width .12s ease; }
+    .step .step-body, .step .step-wp { transition: color .15s ease-out; }
+    .recall-face { transition: opacity .15s ease-out; }
+  }
+</style>
+</head>
+<body>
+
+<svg style="display:none" aria-hidden="true">
+  <symbol id="i-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2.1 5-5 2.1 2.1-5z"/></symbol>
+  <symbol id="i-waypoint" viewBox="0 0 24 24"><path d="M12 21c-4.2-3.8-6.5-7.1-6.5-10A6.5 6.5 0 0 1 12 4.5 6.5 6.5 0 0 1 18.5 11c0 2.9-2.3 6.2-6.5 10z"/><circle cx="12" cy="11" r="2.2"/></symbol>
+  <symbol id="i-route" viewBox="0 0 24 24"><path d="M5 20h7.5a4 4 0 0 0 0-8H8a4 4 0 0 1 0-8h6"/><circle cx="5" cy="20" r="1.8"/><rect x="15" y="2" width="4" height="4"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13.5l9 5 9-5"/></symbol>
+  <symbol id="i-ruler" viewBox="0 0 24 24"><rect x="2.5" y="8.5" width="19" height="7"/><path d="M7 8.5v3M11.5 8.5v3M16 8.5v3"/></symbol>
+  <symbol id="i-flag" viewBox="0 0 24 24"><path d="M5.5 21V3.5"/><path d="M5.5 4.5H18l-2.5 3.5L18 11.5H5.5"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M4.5 12.5l5 5L19.5 7"/></symbol>
+  <symbol id="i-signal" viewBox="0 0 24 24"><path d="M4.5 20v-4M9.5 20v-8M14.5 20v-12M19.5 20V4"/></symbol>
+  <symbol id="i-flip" viewBox="0 0 24 24"><rect x="3.5" y="7.5" width="13" height="13"/><path d="M7.5 3.5h13v13"/></symbol>
+  <symbol id="i-substep" viewBox="0 0 24 24"><path d="M5.5 3.5v17"/><path d="M5.5 6.5h7M5.5 12h11M5.5 17.5h7"/></symbol>
+</svg>
+
+<nav class="spine" aria-label="Deck sections">
+  <div class="spine-mark">RR·TRV</div>
+  <div class="spine-rail" id="rail"></div>
+  <div class="spine-pos" id="spinePos">01/12</div>
+</nav>
+<div class="corner" id="corner" aria-hidden="true">01 · START</div>
+
+<!-- 1 · START -->
+<section class="slide" data-spine="Start">
+  <svg class="contours" viewBox="0 0 560 520" aria-hidden="true">
+    <path d="M120 470 C40 420 30 330 80 260 C130 190 240 170 330 200 C420 230 480 300 460 380 C440 460 340 500 250 495 C200 492 165 488 120 470 Z"/>
+    <path d="M150 440 C90 400 80 330 122 275 C164 220 255 202 328 228 C401 254 448 310 432 372 C416 434 336 466 262 462 C220 460 186 456 150 440 Z"/>
+    <path d="M185 408 C140 378 132 326 164 286 C196 246 264 233 318 253 C372 273 407 315 395 360 C383 405 324 429 270 426 C238 424 212 421 185 408 Z"/>
+    <path d="M222 375 C192 355 186 320 208 293 C230 266 276 258 312 271 C348 284 371 312 363 342 C355 372 316 388 280 386 C258 385 240 383 222 375 Z"/>
+    <circle class="you" cx="286" cy="326" r="6"/>
+    <text x="302" y="330">YOU ARE HERE</text>
+  </svg>
+  <div class="above">
+    <h1>Traverse</h1>
+    <p class="lede m-top-3">Structure you can see, content you earn one step at a time. The map is always on; the material arrives at the pace of your arrow key.</p>
+    <ol class="legend-toc">
+      <li><a href="#2" data-goto="2"><span class="no">02</span> Stance — place it, then earn it</a></li>
+      <li><a href="#3" data-goto="3"><span class="no">03</span> Type — two voices, 18px floor</a></li>
+      <li><a href="#4" data-goto="4"><span class="no">04</span> Color — survey blue survives</a></li>
+      <li><a href="#5" data-goto="5"><span class="no">05</span> Space — the 8px instrument</a></li>
+      <li><a href="#6" data-goto="6"><span class="no">06</span> Icons — two new instruments</a></li>
+      <li><a href="#7" data-goto="7"><span class="no">07</span> Parts — components, re-surveyed</a></li>
+      <li><a href="#8" data-goto="8"><span class="no">08</span> Lookup — legend and recall</a></li>
+      <li><a href="#9" data-goto="9"><span class="no">09</span> Specimen — a stepped route</a></li>
+      <li><a href="#10" data-goto="10"><span class="no">10</span> Signature — ghost waypoints</a></li>
+      <li><a href="#11" data-goto="11"><span class="no">11</span> Recall — check what stuck</a></li>
+      <li><a href="#12" data-goto="12"><span class="no">12</span> Adoption — tokens and kit changes</a></li>
+    </ol>
+    <p class="parentage"><b>WAYPOINT'S MAP</b> &nbsp;×&nbsp; <b>BEAM'S PACE</b> · READING ROOM · 2026-07-23</p>
+    <p class="note m-top-2">→ reveals, then advances · ← retreats the same way · click any tick on the rail</p>
+  </div>
+</section>
+
+<!-- 2 · STANCE -->
+<section class="slide" data-spine="Stance">
+  <h2>Place it, then earn it</h2>
+  <p class="hint">Press <b>→</b> — the three commitments arrive one at a time. The dashed cards below are ghost waypoints: you can see what's coming, not read it early.</p>
+  <div class="prin">
+    <div class="prin-card step">
+      <div class="step-head"><h3 class="step-body"><svg class="icon"><use href="#i-compass"/></svg> Place first, then teach</h3><span class="step-wp">WP 1 · ORIENT</span></div>
+      <div class="step-body">
+        <p>Every screen opens with its coordinate, its section on the rail, and now its position <em>inside</em> the slide. A lost reader spends working memory on "where am I?" — Traverse spends design so that question never comes up.</p>
+      </div>
+    </div>
+    <div class="prin-card step">
+      <div class="step-head"><h3 class="step-body"><svg class="icon"><use href="#i-signal"/></svg> One step at full contrast</h3><span class="step-wp">WP 2 · FOCUS</span></div>
+      <div class="step-body">
+        <p>A slide never competes with itself. The current step owns the ink; absorbed steps drop to secondary ink but stay legible for reference. The pause between key presses is thinking time the design protects.</p>
+      </div>
+    </div>
+    <div class="prin-card step">
+      <div class="step-head"><h3 class="step-body"><svg class="icon"><use href="#i-flip"/></svg> Recall is first-class</h3><span class="step-wp">WP 3 · RETRIEVE</span></div>
+      <div class="step-body">
+        <p>Reading feels like knowing — it isn't. Sections close with recall cards that ask before they tell, because the check is what writes the memory.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 3 · TYPE -->
+<section class="slide" data-spine="Type">
+  <h2>Two voices, two laws</h2>
+  <p class="m-top-2" style="max-width:66ch">The reading voice is <strong>Avenir Next</strong>; the instrument voice is <strong>SF Mono</strong> — numbers, paths, coordinates and labels only. And the scale now obeys two laws written for focus: a column always opens with its largest line, and nothing on a slide is allowed to whisper.</p>
+  <div class="spec m-top-3">
+    <div class="spec-row">
+      <span class="spec-meta">display · 44/1.15 · 600</span>
+      <span class="sp-display">Earn the next waypoint</span>
+    </div>
+    <div class="spec-row">
+      <span class="spec-meta">section · 24–30 · 600</span>
+      <span class="sp-section">Fails loudly, on purpose</span>
+    </div>
+    <div class="spec-row">
+      <span class="spec-meta">body · 18/1.65 · 400</span>
+      <span class="sp-body">The build expands each component against its template, then stops on the first thing it doesn't recognize.</span>
+    </div>
+    <div class="spec-row">
+      <span class="spec-meta">support · 16 · muted</span>
+      <span class="sp-support">Notes, captions, card bodies, labels — the content floor. Nothing you read sets smaller than this.</span>
+    </div>
+    <div class="spec-row">
+      <span class="spec-meta">instrument · mono 16</span>
+      <span class="sp-inst">build.mjs · WP 3/5 revealed · 0 errors</span>
+    </div>
+    <div class="spec-row">
+      <span class="spec-meta">chrome · mono 13 caps</span>
+      <span class="sp-label">09 · SPECIMEN — rail and HUD only, never in the column</span>
+    </div>
+  </div>
+  <div class="comp-grid m-top-3">
+    <div class="card">
+      <div class="head"><h3 class="card-t">The descending column</h3><span class="klabel">Law · 01</span></div>
+      <p style="font-size:16px; margin-top:var(--s1)">A column opens with its largest line and sizes only fall from there. Kind-labels ride the title line; coordinates live in the chrome. Nothing small ever sits above something big.</p>
+    </div>
+    <div class="card">
+      <div class="head"><h3 class="card-t">The floor</h3><span class="klabel">Law · 02</span></div>
+      <p style="font-size:16px; margin-top:var(--s1)">Content never sets below 16px; chrome never below 13px. Hierarchy is carried by weight, ink against muted, sans against mono — never by shrinking.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 4 · COLOR -->
+<section class="slide" data-spine="Color">
+  <h2>Survey blue survives</h2>
+  <p class="m-top-2" style="max-width:66ch">Beam brought its iris violet to the merge; it didn't make it. Two identity colors would split the one signal that matters — <em>where you are, and what you can act on</em>. Survey blue now also marks the current step and the flipped recall card. The semantic trio keeps its Reading Room meaning and stays rare.</p>
+  <p class="strip-cap">Light · chart paper</p>
+  <div class="strip">
+    <div class="sw" style="background:#f4f5f3;color:#232a2e"><b>bg</b><span>#f4f5f3</span></div>
+    <div class="sw" style="background:#eceeea;color:#232a2e"><b>surface</b><span>#eceeea</span></div>
+    <div class="sw" style="background:#dde1dd;color:#232a2e"><b>line</b><span>#dde1dd</span></div>
+    <div class="sw" style="background:#232a2e;color:#f4f5f3"><b>ink</b><span>#232a2e</span></div>
+    <div class="sw" style="background:#7d8a90;color:#f4f5f3"><b>muted</b><span>#7d8a90</span></div>
+    <div class="sw" style="background:#2456d6;color:#f4f5f3"><b>survey</b><span>#2456d6</span></div>
+    <div class="sw" style="background:#a8730d;color:#f4f5f3"><b>amber</b><span>#a8730d</span></div>
+    <div class="sw" style="background:#3f7a5a;color:#f4f5f3"><b>green</b><span>#3f7a5a</span></div>
+    <div class="sw" style="background:#c04a42;color:#f4f5f3"><b>red</b><span>#c04a42</span></div>
+  </div>
+  <p class="strip-cap">Dark · night navigation — never near-black</p>
+  <div class="strip">
+    <div class="sw" style="background:#1b2023;color:#dde3e6"><b>bg</b><span>#1b2023</span></div>
+    <div class="sw" style="background:#232a2e;color:#dde3e6"><b>surface</b><span>#232a2e</span></div>
+    <div class="sw" style="background:#313a3f;color:#dde3e6"><b>line</b><span>#313a3f</span></div>
+    <div class="sw" style="background:#dde3e6;color:#1b2023"><b>ink</b><span>#dde3e6</span></div>
+    <div class="sw" style="background:#8b979d;color:#1b2023"><b>muted</b><span>#8b979d</span></div>
+    <div class="sw" style="background:#6b9aff;color:#1b2023"><b>survey</b><span>#6b9aff</span></div>
+    <div class="sw" style="background:#c99245;color:#1b2023"><b>amber</b><span>#c99245</span></div>
+    <div class="sw" style="background:#5f9e7d;color:#1b2023"><b>green</b><span>#5f9e7d</span></div>
+    <div class="sw" style="background:#d3675f;color:#1b2023"><b>red</b><span>#d3675f</span></div>
+  </div>
+  <ul class="sem">
+    <li><i style="background:var(--accent)"></i><strong>Survey blue</strong> — your position (slide, step, tick) and anything you can click. Nothing else. Emphasis inside content is contrast against dimness, so one accent is enough.</li>
+    <li><i style="background:var(--amber)"></i><strong>Amber</strong> — open decision or risk. &nbsp;<i style="background:var(--green)"></i><strong>Green</strong> — verified, done. &nbsp;<i style="background:var(--red)"></i><strong>Red</strong> — hard failure only.</li>
+  </ul>
+</section>
+
+<!-- 5 · SPACE -->
+<section class="slide" data-spine="Space">
+  <h2>The 8px instrument</h2>
+  <p class="m-top-2" style="max-width:66ch">All spacing snaps to an eight-step ruler, <code>--s1</code> through <code>--s8</code>. Hairlines stay boundaries, never decoration. And one new rule from the merge: <strong>a revealing step never moves the page</strong> — every ghost waypoint reserves its full space before its content arrives.</p>
+  <div class="cols2 m-top-3">
+    <div>
+      <p class="strip-cap">Scale</p>
+      <div class="srow"><code>--s1</code><i style="width:8px"></i><span>8</span></div>
+      <div class="srow"><code>--s2</code><i style="width:16px"></i><span>16</span></div>
+      <div class="srow"><code>--s3</code><i style="width:24px"></i><span>24</span></div>
+      <div class="srow"><code>--s4</code><i style="width:32px"></i><span>32</span></div>
+      <div class="srow"><code>--s5</code><i style="width:48px"></i><span>48</span></div>
+      <div class="srow"><code>--s6</code><i style="width:64px"></i><span>64</span></div>
+      <div class="srow"><code>--s7</code><i style="width:96px"></i><span>96</span></div>
+      <div class="srow"><code>--s8</code><i style="width:128px"></i><span>128</span></div>
+    </div>
+    <div>
+      <p class="strip-cap">Anatomy of a slide</p>
+      <div class="anatomy">
+        <div class="an-spine" aria-hidden="true"><i></i><i></i><i class="on"></i><i class="sub"></i><i class="sub"></i><i class="sub-off"></i><i></i><i></i></div>
+        <div class="an-page">
+          <div class="an-head"><div class="an-title"></div><div class="an-corner"></div></div>
+          <div class="an-gap an-g3">--s3</div>
+          <div class="an-block"></div>
+          <div class="an-gap an-g2">--s2</div>
+          <div class="an-ghost"><span>WP 3 · GHOST — SPACE RESERVED</span></div>
+        </div>
+        <div class="an-legend" aria-hidden="true"><span>LEGEND</span><i></i><i></i></div>
+      </div>
+      <p class="note m-top-2">The title opens the column; the outlined chip at top right is the coordinate — it lives in the chrome, never above the title. Spine with sub-ticks at left, legend panel at the edge, ghosts holding their ground.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 6 · ICONS -->
+<section class="slide" data-spine="Icons">
+  <h2>Two new instruments</h2>
+  <div class="icon-spec m-top-2">
+    <div class="icon-grid-demo"><svg class="icon"><use href="#i-flip"/></svg></div>
+    <div>
+      <p style="max-width:56ch">Same machining as Waypoint: <strong>24-unit grid, 2px stroke, square caps, miter joins</strong>, no fills, <code>currentColor</code> throughout. The merge adds exactly two symbols, drawn in the same hand — <strong>flip</strong> for recall cards and <strong>substep</strong> for the subdivided rail.</p>
+      <p class="note m-top-2">The build already tree-shakes the sprite; a document that flips no cards ships no flip icon.</p>
+    </div>
+  </div>
+  <div class="iconrow m-top-3">
+    <figure><svg class="icon"><use href="#i-compass"/></svg><figcaption>compass</figcaption></figure>
+    <figure><svg class="icon"><use href="#i-waypoint"/></svg><figcaption>waypoint</figcaption></figure>
+    <figure><svg class="icon"><use href="#i-route"/></svg><figcaption>route</figcaption></figure>
+    <figure><svg class="icon"><use href="#i-layers"/></svg><figcaption>layers</figcaption></figure>
+    <figure><svg class="icon"><use href="#i-ruler"/></svg><figcaption>ruler</figcaption></figure>
+    <figure><svg class="icon"><use href="#i-flag"/></svg><figcaption>flag</figcaption></figure>
+    <figure><svg class="icon"><use href="#i-check"/></svg><figcaption>check</figcaption></figure>
+    <figure><svg class="icon"><use href="#i-signal"/></svg><figcaption>signal</figcaption></figure>
+    <figure class="new-icon"><svg class="icon"><use href="#i-flip"/></svg><figcaption>flip</figcaption></figure>
+    <figure class="new-icon"><svg class="icon"><use href="#i-substep"/></svg><figcaption>substep</figcaption></figure>
+  </div>
+  <div class="dodont m-top-3">
+    <div class="dd dd-ok">
+      <svg class="icon" style="color:var(--fg)"><use href="#i-flip"/></svg>
+      <div><b>DO</b><p>2px, squared, stroke-only. The new glyphs are indistinguishable in manner from the original eight.</p></div>
+    </div>
+    <div class="dd dd-bad">
+      <svg class="icon" style="color:var(--fg)"><use href="#i-flip"/></svg>
+      <div><b>DON'T</b><p>No rounded caps, no hairline strokes, no fills. Beam's bubbly icon voice stayed in Beam.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 7 · PARTS -->
+<section class="slide" data-spine="Parts">
+  <h2>Components, re-surveyed</h2>
+  <p class="m-top-2" style="max-width:66ch">Waypoint's geometry holds: <code>radius: 4px</code>, borders over shadows, and <strong>every surface carries a mono kind-label riding its first line</strong>, so a figure can be cited like a coordinate — beside the title, never stacked above it. Any of these can become a step; the label doubles as its ghost coordinate.</p>
+  <div class="tiles m-top-3">
+    <div class="card"><div class="head"><div class="tile-v">412<span class="tile-u">ms</span></div><span class="klabel">Build</span></div><div class="tile-c">demo.rr.html, cold run</div></div>
+    <div class="card"><div class="head"><div class="tile-v">10/27</div><span class="klabel">Sprite</span></div><div class="tile-c">icons shipped after tree-shake</div></div>
+    <div class="card"><div class="head"><div class="tile-v">150<span class="tile-u">ms</span></div><span class="klabel">Motion</span></div><div class="tile-c">ceiling — contrast changes only</div></div>
+  </div>
+  <div class="comp-grid m-top-2">
+    <div>
+      <div class="card">
+        <div class="head"><h3 class="card-t">One idea per surface</h3><span class="klabel">Fig 07-A</span></div>
+        <p style="font-size:16px; margin-top:var(--s1)">A surface holds one idea, sized to be absorbed in one fixation group. The kind-label names it, the hairline bounds it, and nothing inside competes with survey blue.</p>
+        <p class="m-top-2"><span class="badge">Neutral</span> <span class="badge badge-blue">Position</span> <span class="badge badge-green">Verified</span> <span class="badge badge-amber">Open</span> <span class="badge badge-red">Failed</span></p>
+      </div>
+      <div class="m-top-2">
+        <div class="prog-label"><span>RECALL COVERAGE</span><span>4 / 6 SECTIONS</span></div>
+        <div class="prog"><i style="width:66%"></i></div>
+      </div>
+    </div>
+    <div>
+      <div class="callout callout-amber">
+        <div class="head"><span class="co-t">Open decision</span><span class="klabel" style="color:var(--amber)">Callout</span></div>
+        Do ghost waypoints belong in scrolling documents too, or only in decks where the arrow key sets the pace? Amber means genuinely undecided — the deck is asking you.
+      </div>
+      <p class="note m-top-2">Bars never appear without their mono <code>n / m</code> label; a number you can't read isn't a measurement.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 8 · LOOKUP -->
+<section class="slide" data-spine="Lookup">
+  <h2>The legend explains, the card asks</h2>
+  <p class="m-top-2" style="max-width:66ch">Definitions keep Waypoint's rule — maps don't use tooltips. Dotted terms light their entry in the fixed <strong>legend panel</strong>, on screen for the whole slide. Then the section closes Beam's way: recall cards that ask before they tell.</p>
+  <div class="lookup m-top-3">
+    <div>
+      <p style="max-width:58ch">The build reads your source, expands every component, then <span class="term" tabindex="0" data-term="treeshake">tree-shakes</span> the <span class="term" tabindex="0" data-term="sprite">icon sprite</span> so the output ships only what it uses. Because the file is <span class="term" tabindex="0" data-term="selfcontained">self-contained</span>, it opens from disk years later with zero dependencies.</p>
+      <p class="note m-top-2">Hover or focus a dotted term — its legend entry lights up. A second look costs one eye movement, not a hover hunt.</p>
+    </div>
+    <aside class="legend" aria-label="Legend — definitions for this slide">
+      <h3>Legend</h3>
+      <div class="legend-item" data-def="treeshake"><b>tree-shake</b><p>Keep only what's actually referenced; drop the rest at build time.</p></div>
+      <div class="legend-item" data-def="sprite"><b>icon sprite</b><p>One hidden SVG holding every symbol, referenced many times by id.</p></div>
+      <div class="legend-item" data-def="selfcontained"><b>self-contained</b><p>All CSS, JS and icons inline — no network, no CDN, no rot.</p></div>
+    </aside>
+  </div>
+  <div class="comp-grid m-top-3">
+    <button class="recall" aria-pressed="false">
+      <span class="recall-face front">
+        <span class="recall-q">What does the build do when it meets an unknown component or prop?</span>
+        <span class="recall-foot"><svg class="icon"><use href="#i-flip"/></svg> Recall · 01 — tap or Enter</span>
+      </span>
+      <span class="recall-face back">
+        <span class="recall-q">It fails loudly and stops.</span>
+        <span class="recall-why">Why it matters: a silent fallback would let off-system documents ship. Errors surface at build time, never in front of the reader.</span>
+        <span class="recall-foot"><svg class="icon"><use href="#i-check"/></svg> Answer · Recall 01</span>
+      </span>
+    </button>
+    <button class="recall" aria-pressed="false">
+      <span class="recall-face front">
+        <span class="recall-q">Where does a term's definition live in Traverse?</span>
+        <span class="recall-foot"><svg class="icon"><use href="#i-flip"/></svg> Recall · 02 — tap or Enter</span>
+      </span>
+      <span class="recall-face back">
+        <span class="recall-q">In the legend panel at the slide's edge.</span>
+        <span class="recall-why">Why it matters: tooltips vanish on mouse-out and cover neighboring text; the legend keeps every definition in a fixed, citable place.</span>
+        <span class="recall-foot"><svg class="icon"><use href="#i-check"/></svg> Answer · Recall 02</span>
+      </span>
+    </button>
+  </div>
+</section>
+
+<!-- 9 · SPECIMEN -->
+<section class="slide" data-spine="Specimen">
+  <h2>One build, five waypoints, your pace</h2>
+  <p class="hint">A real lesson, set in Traverse: what happens when you run <code>node build.mjs doc.rr.html</code> — <b>→</b> reveals each waypoint. The route below shows every coordinate now; the content is earned. Watch the rail: the Specimen tick has subdivided.</p>
+  <ol class="route m-top-2">
+    <li class="step">
+      <span class="wp-dot"><svg class="icon"><use href="#i-layers"/></svg></span>
+      <div class="step-head"><p class="wp-t step-body">Read the source, find every <code>&lt;rr-*&gt;</code> tag</p><span class="wp-co">WP·1 — PARSE</span></div>
+      <div class="step-body">
+        <p class="wp-d">The <code>rr-doc</code> shell is located first; everything else must live inside it.</p>
+      </div>
+    </li>
+    <li class="step">
+      <span class="wp-dot"><svg class="icon"><use href="#i-route"/></svg></span>
+      <div class="step-head"><p class="wp-t step-body">Match each tag against its template in <code>components/</code></p><span class="wp-co">WP·2 — EXPAND</span></div>
+      <div class="step-body">
+        <p class="wp-d">Props become attributes, children drop into slots, defaults fill in.</p>
+      </div>
+    </li>
+    <li class="step">
+      <span class="wp-dot wp-red"><svg class="icon"><use href="#i-flag"/></svg></span>
+      <div class="step-head"><p class="wp-t step-body">Fail loudly on anything unknown</p><span class="wp-co">WP·3 — VERIFY</span></div>
+      <div class="step-body">
+        <p class="wp-d">Unknown component, missing prop, unregistered icon — the build stops and names the offender. Errors surface at build time, never in front of the reader.</p>
+      </div>
+    </li>
+    <li class="step">
+      <span class="wp-dot"><svg class="icon"><use href="#i-ruler"/></svg></span>
+      <div class="step-head"><p class="wp-t step-body">Copy only the icons actually used out of <code>icons.svg</code></p><span class="wp-co">WP·4 — TREE-SHAKE</span></div>
+      <div class="step-body">
+        <p class="wp-d">A document that uses 10 symbols ships 10 symbols, not the library.</p>
+      </div>
+    </li>
+    <li class="step">
+      <span class="wp-dot wp-green"><svg class="icon"><use href="#i-check"/></svg></span>
+      <div class="step-head"><p class="wp-t step-body">Write one self-contained HTML file</p><span class="wp-co">WP·5 — EMIT</span></div>
+      <div class="step-body">
+        <p class="wp-d">Canonical CSS, both themes, zero external requests. It opens from disk, forever.</p>
+      </div>
+    </li>
+  </ol>
+</section>
+
+<!-- 10 · SIGNATURE -->
+<section class="slide" data-spine="Signature">
+  <h2>Ghost waypoints</h2>
+  <p class="m-top-2" style="max-width:66ch">The parents disagreed: Beam hid what's coming so you couldn't read ahead; Waypoint showed everything so you always knew the terrain. The synthesis — a <strong>ghost waypoint</strong> shows the <em>shape</em> of what's coming (its coordinate, its reserved space) and holds back the <em>content</em> until you ask. You preview the route without spoiling the pace.</p>
+  <div class="states4 m-top-3">
+    <div class="st st-ghost">
+      <span class="step-wp">WP 4 · EMIT</span>
+      <span class="st-line" style="width:80%"></span>
+      <span class="st-line" style="width:60%"></span>
+      <p><b>GHOST</b> — coordinate visible, content withheld, space fully reserved. Nothing moves when it arrives.</p>
+    </div>
+    <div class="st">
+      <span class="step-wp st-wp-on">WP 3 · VERIFY</span>
+      <span class="st-line st-line-ink" style="width:80%"></span>
+      <span class="st-line st-line-ink" style="width:60%"></span>
+      <p><b>CURRENT</b> — full ink, survey-blue coordinate. The only thing the eye is asked to hold.</p>
+    </div>
+    <div class="st">
+      <span class="step-wp">WP 2 · EXPAND</span>
+      <span class="st-line st-line-mut" style="width:80%"></span>
+      <span class="st-line st-line-mut" style="width:60%"></span>
+      <p><b>ABSORBED</b> — dropped to secondary ink. Still legible for reference, no longer loud.</p>
+    </div>
+    <div class="st">
+      <div class="st-subdemo" aria-hidden="true"><i></i><i class="big"></i><i class="s-on"></i><i class="s-now"></i><i class="s-off"></i><i></i></div>
+      <p><b>ON THE RAIL</b> — the current tick subdivides, one dash per step; the wide dash is where you stand inside the slide.</p>
+    </div>
+  </div>
+  <div class="callout m-top-3">
+    <div class="head"><span class="co-t">Why it matters for learning</span><span class="klabel" style="color:var(--accent)">Spine × Beam</span></div>
+    Orientation and pacing stop being separate systems. One glance at the rail answers both questions — <em>which section am I in, and how far through this idea am I?</em> — and the pause before each reveal is where retrieval happens. State changes are contrast changes: nothing moves, nothing slides in, ≤150ms, pure swaps under reduced motion.
+  </div>
+</section>
+
+<!-- 11 · RECALL -->
+<section class="slide" data-spine="Recall">
+  <h2>Check what stuck</h2>
+  <p class="m-top-2" style="max-width:66ch">The deck practices what it proposes — before the tokens, two questions on Traverse itself. Answer in your head first; that's the point.</p>
+  <div class="comp-grid m-top-3">
+    <button class="recall" aria-pressed="false">
+      <span class="recall-face front">
+        <span class="recall-q">What does a ghost waypoint show, and what does it hide?</span>
+        <span class="recall-foot"><svg class="icon"><use href="#i-flip"/></svg> Recall · 03 — tap or Enter</span>
+      </span>
+      <span class="recall-face back">
+        <span class="recall-q">It shows the coordinate and reserves the space; it hides the content until revealed.</span>
+        <span class="recall-why">Why it matters: you can survey the whole route without reading ahead — orientation without spoiling the pace.</span>
+        <span class="recall-foot"><svg class="icon"><use href="#i-check"/></svg> Answer · Recall 03</span>
+      </span>
+    </button>
+    <button class="recall" aria-pressed="false">
+      <span class="recall-face front">
+        <span class="recall-q">When does a step's text drop to secondary ink?</span>
+        <span class="recall-foot"><svg class="icon"><use href="#i-flip"/></svg> Recall · 04 — tap or Enter</span>
+      </span>
+      <span class="recall-face back">
+        <span class="recall-q">When a newer step is revealed — the older one is absorbed.</span>
+        <span class="recall-why">Why it matters: absorbed context stays on screen for reference but stops competing with the idea you're holding now.</span>
+        <span class="recall-foot"><svg class="icon"><use href="#i-check"/></svg> Answer · Recall 04</span>
+      </span>
+    </button>
+  </div>
+</section>
+
+<!-- 12 · ADOPT -->
+<section class="slide" data-spine="Adopt">
+  <h2>Tokens, and what changes in the kit</h2>
+  <div class="cols2 m-top-3">
+    <pre><i>/* traverse.tokens.css */</i>
+:root {
+  <b>--bg</b>: #f4f5f3;  <b>--surface</b>: #eceeea;
+  <b>--line</b>: #dde1dd; <i>/* rules are boundaries */</i>
+  <b>--fg</b>: #232a2e;  <b>--muted</b>: #7d8a90;
+  <b>--accent</b>: #2456d6; <i>/* position + action */</i>
+  <b>--amber</b>: #a8730d; <b>--green</b>: #3f7a5a;
+  <b>--red</b>: #c04a42;   <i>/* hard failure only */</i>
+  <b>--s1</b>: 8px; <b>--s2</b>: 16px; <b>--s3</b>: 24px; <b>--s4</b>: 32px;
+  <b>--s5</b>: 48px; <b>--s6</b>: 64px; <b>--s7</b>: 96px; <b>--s8</b>: 128px;
+  <b>--t-display</b>: 44px; <b>--t-section</b>: 30px;
+  <b>--t-body</b>: 18px; <b>--t-support</b>: 16px; <i>/* content floor */</i>
+  <b>--t-chrome</b>: 13px;  <i>/* rail + hud only */</i>
+  <b>--text</b>: "Avenir Next", Avenir, ui-sans-serif;
+  <b>--mono</b>: ui-monospace, "SF Mono";
+  <b>--radius</b>: 4px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    <b>--bg</b>: #1b2023; <b>--surface</b>: #232a2e;
+    <b>--line</b>: #313a3f; <b>--fg</b>: #dde3e6;
+    <b>--muted</b>: #8b979d; <b>--accent</b>: #6b9aff;
+    <b>--amber</b>: #c99245; <b>--green</b>: #5f9e7d;
+    <b>--red</b>: #d3675f;
+  }
+}</pre>
+    <div>
+      <ol class="adopt-list">
+        <li><span class="no">1</span><span>The deck shell grows the <strong>spine with sub-ticks</strong>: slides declare a section name, steps subdivide the current tick, and the rail becomes the whole sense of place.</span></li>
+        <li><span class="no">2</span><span>New <code>rr-steps</code>/<code>rr-step</code> components bring <strong>ghost waypoints</strong> to any deck slide — coordinate visible, content earned, space always reserved.</span></li>
+        <li><span class="no">3</span><span><code>rr-recall</code> replaces <code>rr-quiz</code>: <strong>flip-to-reveal cards</strong> that ask before they tell, restyled to the chassis — 4px radius, mono footer label, no shadow.</span></li>
+        <li><span class="no">4</span><span><code>rr-term</code> renders into the per-slide <strong>legend panel</strong> instead of a hover tooltip; definitions become citable fixtures.</span></li>
+        <li><span class="no">5</span><span>The base sheet keeps the <strong>two-voice type system</strong> and lifts body text to an <strong>18px floor</strong> — the one thing Beam was simply right about.</span></li>
+        <li><span class="no">6</span><span>The <strong>type law is canon</strong>: descending columns, a 16px content floor, a 13px chrome floor. Kickers are gone — coordinates live in the chrome, kind-labels ride the title line, and hierarchy is carried by weight and ink, never by shrinking.</span></li>
+      </ol>
+      <p class="m-top-3" style="max-width:44ch">Pick this direction and the next deck you read will place you, pace you, and quiz you — in that order.</p>
+    </div>
+  </div>
+</section>
+
+<footer class="hud">
+  <button class="hud-btn" data-nav="-1" aria-label="Previous">←</button>
+  <button class="hud-btn" data-nav="1" aria-label="Next">→</button>
+  <span class="hud-hint">→ reveals, then advances · ← retreats · Home/End · click the rail</span>
+  <div class="hud-bar" aria-hidden="true"><i></i></div>
+  <span class="hud-count" id="hudCount">1 / 12</span>
+</footer>
+
+<script>
+  const slides = [...document.querySelectorAll(".slide")];
+  const rail = document.getElementById("rail");
+  const spinePos = document.getElementById("spinePos");
+  const corner = document.getElementById("corner");
+  const hudCount = document.getElementById("hudCount");
+  const hudBar = document.querySelector(".hud-bar > i");
+  const pad = (n) => String(n).padStart(2, "0");
+
+  const deck = slides.map((el) => ({ el, steps: [...el.querySelectorAll(".step")], revealed: 0, sub: null }));
+
+  deck.forEach((s, j) => {
+    const b = document.createElement("button");
+    b.className = "spine-tick";
+    b.setAttribute("aria-label", "Slide " + (j + 1) + ": " + s.el.dataset.spine);
+    b.innerHTML = '<span class="spine-lab">' + s.el.dataset.spine + "</span>";
+    if (s.steps.length) {
+      const sub = document.createElement("span");
+      sub.className = "spine-sub";
+      s.steps.forEach(() => sub.appendChild(document.createElement("i")));
+      b.append(sub);
+      s.sub = sub;
+    }
+    b.addEventListener("click", () => show(j, false));
+    rail.append(b);
+  });
+  const ticks = [...rail.children];
+
+  let i = -1;
+
+  function renderSteps(s) {
+    s.steps.forEach((el, j) => {
+      el.classList.toggle("is-shown", j < s.revealed);
+      el.classList.toggle("is-done", j < s.revealed - 1);
+    });
+    if (s.sub) [...s.sub.children].forEach((d, j) => {
+      d.classList.toggle("on", j < s.revealed);
+      d.classList.toggle("now", j === s.revealed - 1);
+    });
+    const wp = s.steps.length ? " · WP " + s.revealed + "/" + s.steps.length : "";
+    spinePos.textContent = pad(i + 1) + "/" + pad(slides.length) + wp;
+    const frac = s.steps.length ? s.revealed / s.steps.length : 1;
+    hudBar.style.width = ((i + frac) / slides.length) * 100 + "%";
+  }
+
+  function show(n, fromBehind) {
+    const next = Math.max(0, Math.min(slides.length - 1, n));
+    if (next === i) return;
+    i = next;
+    deck.forEach((s, j) => s.el.classList.toggle("active", j === i));
+    ticks.forEach((t, j) => t.setAttribute("aria-current", j === i ? "true" : "false"));
+    const s = deck[i];
+    s.revealed = fromBehind ? s.steps.length : 0;
+    renderSteps(s);
+    hudCount.textContent = (i + 1) + " / " + slides.length;
+    corner.textContent = pad(i + 1) + " · " + s.el.dataset.spine.toUpperCase();
+    history.replaceState(null, "", "#" + (i + 1));
+  }
+
+  function fwd() {
+    const s = deck[i];
+    if (s.revealed < s.steps.length) { s.revealed++; renderSteps(s); }
+    else show(i + 1, false);
+  }
+  function back() {
+    const s = deck[i];
+    if (s.revealed > 0) { s.revealed--; renderSteps(s); }
+    else show(i - 1, true);
+  }
+
+  addEventListener("keydown", (e) => {
+    const t = e.target.tagName;
+    if (/^(INPUT|TEXTAREA|SELECT)$/.test(t)) return;
+    const isArrowish = ["ArrowRight", "ArrowDown", "ArrowLeft", "ArrowUp", "PageDown", "PageUp", "Home", "End"].includes(e.key);
+    if (t === "BUTTON" && !isArrowish) return; // space/enter belong to the focused control
+    if (["ArrowRight", "ArrowDown", " ", "PageDown"].includes(e.key)) { e.preventDefault(); fwd(); }
+    else if (["ArrowLeft", "ArrowUp", "PageUp"].includes(e.key)) { e.preventDefault(); back(); }
+    else if (e.key === "Home") { e.preventDefault(); show(0, false); }
+    else if (e.key === "End") { e.preventDefault(); show(slides.length - 1, true); }
+  });
+
+  document.querySelectorAll("[data-nav]").forEach((b) =>
+    b.addEventListener("click", () => (+b.dataset.nav > 0 ? fwd() : back())));
+  document.querySelectorAll("[data-goto]").forEach((a) =>
+    a.addEventListener("click", (e) => { e.preventDefault(); show(+a.dataset.goto - 1, false); }));
+  addEventListener("hashchange", () => show((parseInt(location.hash.slice(1), 10) || 1) - 1, false));
+
+  // legend lookup: terms light their definition
+  document.querySelectorAll(".term").forEach((t) => {
+    const hit = document.querySelector('.legend-item[data-def="' + t.dataset.term + '"]');
+    if (!hit) return;
+    const on = () => { t.classList.add("term-hot"); hit.classList.add("legend-lit"); };
+    const off = () => { t.classList.remove("term-hot"); hit.classList.remove("legend-lit"); };
+    t.addEventListener("mouseenter", on); t.addEventListener("mouseleave", off);
+    t.addEventListener("focus", on); t.addEventListener("blur", off);
+  });
+
+  // recall cards
+  document.querySelectorAll(".recall").forEach((b) =>
+    b.addEventListener("click", () => {
+      b.classList.toggle("is-flipped");
+      b.setAttribute("aria-pressed", b.classList.contains("is-flipped"));
+    }));
+
+  show((parseInt(location.hash.slice(1), 10) || 1) - 1, false);
+</script>
+</body>
+</html>
